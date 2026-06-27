@@ -5,35 +5,92 @@ from __future__ import annotations
 import string
 
 _QR_ALPHANUMERIC = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:"
-_PASS_THROUGH = set(string.digits + " $*-/.:")
-_PASS_THROUGH.add(" ")
+_PASS_THROUGH = set(string.digits + " $*-. ")
 _HEX = set(string.hexdigits.upper())
+_SHIFT_ESCAPES = {
+    "1": "!",
+    "2": "@",
+    "3": "#",
+    "4": "$",
+    "5": "%",
+    "6": "^",
+    "7": "&",
+    "8": "*",
+    "9": "(",
+    "0": ")",
+    "/": "?",
+}
+_SHIFT_ESCAPE_KEYS_BY_CHAR = {value: key for key, value in _SHIFT_ESCAPES.items()}
 
 
 def encode(text: str) -> str:
     """Encode Unicode text as b45 QR Alphanumeric text.
 
     Lowercase ASCII letters are uppercased, original uppercase ASCII letters
-    are escaped as ``+X``, literal ``+`` and ``%`` are doubled, supported QR
-    Alphanumeric punctuation passes through, and every unsupported character is
-    emitted as uppercase UTF-8 ``%HH`` byte escapes.
+    are escaped as ``+X``, literal ``+`` and ``%`` are doubled, isolated common
+    ``,`` and ``"`` characters use ``:`` and ``/``, isolated literal ``:`` and
+    ``/`` use ``::`` and ``//``, keyboard-shift punctuation uses ``+``
+    escapes, supported QR Alphanumeric punctuation passes through, and every
+    unsupported character is emitted as uppercase UTF-8
+    ``%HH`` byte escapes.
     """
 
     parts: list[str] = []
-    for char in text:
-        if "a" <= char <= "z":
-            parts.append(char.upper())
-        elif "A" <= char <= "Z":
-            parts.append(f"+{char}")
-        elif char == "+":
-            parts.append("++")
-        elif char == "%":
-            parts.append("%%")
-        elif char in _PASS_THROUGH:
-            parts.append(char)
-        else:
-            parts.extend(f"%{byte:02X}" for byte in char.encode("utf-8"))
+    index = 0
+    while index < len(text):
+        char = text[index]
+        if char in ',:':
+            index = _encode_special_run(text, index, ',:', parts)
+            continue
+        if char in '"/':
+            index = _encode_special_run(text, index, '"/', parts)
+            continue
+        _encode_char(char, parts)
+        index += 1
     return "".join(parts)
+
+
+def _encode_special_run(text: str, index: int, alphabet: str, parts: list[str]) -> int:
+    start = index
+    while index < len(text) and text[index] in alphabet:
+        index += 1
+
+    if index - start == 1:
+        char = text[start]
+        if char == ",":
+            parts.append(":")
+        elif char == ":":
+            parts.append("::")
+        elif char == '"':
+            parts.append("/")
+        else:
+            parts.append("//")
+        return index
+
+    for char in text[start:index]:
+        _encode_utf8_escape(char, parts)
+    return index
+
+
+def _encode_char(char: str, parts: list[str]) -> None:
+    if "a" <= char <= "z":
+        parts.append(char.upper())
+    elif "A" <= char <= "Z":
+        parts.append(f"+{char}")
+    elif char == "+":
+        parts.append("++")
+    elif char == "%":
+        parts.append("%%")
+    elif char in _PASS_THROUGH:
+        parts.append(char)
+    elif char in _SHIFT_ESCAPE_KEYS_BY_CHAR:
+        parts.append(f"+{_SHIFT_ESCAPE_KEYS_BY_CHAR[char]}")
+    else:
+        _encode_utf8_escape(char, parts)
+
+
+def _encode_utf8_escape(char: str, parts: list[str]) -> None:
+    parts.extend(f"%{byte:02X}" for byte in char.encode("utf-8"))
 
 
 def decode(encoded: str) -> str:
@@ -60,9 +117,29 @@ def decode(encoded: str) -> str:
                 output.append("+")
             elif "A" <= next_char <= "Z":
                 output.append(next_char)
+            elif next_char in _SHIFT_ESCAPES:
+                output.append(_SHIFT_ESCAPES[next_char])
             else:
                 raise ValueError(f"invalid '+' escape at position {index}: '+{next_char}'")
             index += 2
+            continue
+
+        if char == ":":
+            if index + 1 < length and encoded[index + 1] == ":":
+                output.append(":")
+                index += 2
+            else:
+                output.append(",")
+                index += 1
+            continue
+
+        if char == "/":
+            if index + 1 < length and encoded[index + 1] == "/":
+                output.append("/")
+                index += 2
+            else:
+                output.append('"')
+                index += 1
             continue
 
         if char == "%":
