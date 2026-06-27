@@ -51,15 +51,8 @@ output.
 
 ## Interactive Playground
 
-Markdown renderers such as GitHub README pages do not run arbitrary
-JavaScript, so the interactive encoder/decoder is provided as a standalone HTML
-demo instead of directly inside this `README.md` file. Open
-[`docs/demo.html`](docs/demo.html) in a browser, or publish the `docs/`
-directory with GitHub Pages, to try the transform first hand.
-
-The demo is self-contained and mirrors the reference rules below: enter
-plain text, encode it into the QR Alphanumeric Mode-safe b45 alphabet, then
-decode it back to verify the round trip.
+Try the [hosted demo](https://greyphilosophy.github.io/b45/demo.html), or open
+[`docs/demo.html`](docs/demo.html) locally.
 
 ------------------------------------------------------------------------
 
