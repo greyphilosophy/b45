@@ -21,7 +21,11 @@ TEST_VECTORS = [
     ("a+b", "A++B"),
     ("50% off", "50%% OFF"),
     ("can't", "CAN%27T"),
-    ("hello, world", "HELLO%2C WORLD"),
+    ("wow! @you #1 ^up & down (ok)?", "WOW+1 +2YOU +31 +6UP +7 DOWN +9OK+0+/"),
+    ("hello, world", "HELLO: WORLD"),
+    ('say "hi"', "SAY /HI/"),
+    ("ratio 1:2", "RATIO 1::2"),
+    ("path/to", "PATH//TO"),
     ("é", "%C3%A9"),
     ("😀", "%F0%9F%98%80"),
     (
@@ -44,8 +48,11 @@ def test_test_vectors(text, encoded):
         ("abcxyz", "ABCXYZ"),
         ("ABCXYZ", "+A+B+C+X+Y+Z"),
         ("+%", "++%%"),
-        ("0123456789 $*-. /:", "0123456789 $*-. /:"),
-        (",'", "%2C%27"),
+        ("!@#^&()?", "+1+2+3+6+7+9+0+/"),
+        ("$%*", "$%%*"),
+        ("0123456789 $*-.", "0123456789 $*-."),
+        (",'", ":%27"),
+        ('"/,:', "%22%2F%2C%3A"),
     ],
 )
 def test_encode_decode_cases(text, encoded):
@@ -53,8 +60,12 @@ def test_encode_decode_cases(text, encoded):
     assert decode(encoded) == text
 
 
+def test_decode_accepts_duplicate_shift_spellings():
+    assert decode("+4+5+8") == "$%*"
+
+
 def test_mixed_round_trip():
-    text = "Hello, QR + b45 % café 😀"
+    text = 'Hello, "QR" + b45 / 100%: café 😀'
     assert decode(encode(text)) == text
 
 
@@ -63,9 +74,9 @@ def test_mixed_round_trip():
     [
         "+",  # bare trailing plus
         "%",  # bare trailing percent
-        "+1",  # plus followed by non-letter, non-plus
         "+%",
         "+-",
+        "+:",
         "%A",  # percent followed by fewer than two characters
         "%G0",  # percent followed by non-hex characters
         "%0G",
@@ -80,5 +91,5 @@ def test_invalid_encoded_input_raises_value_error(encoded):
 
 
 def test_encoding_is_total_for_valid_unicode_strings():
-    text = "Hello, b45 + 100% — café 😀\0"
+    text = 'Hello, "b45" + 100% / — café 😀\0'
     assert decode(encode(text)) == text

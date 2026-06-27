@@ -2,7 +2,7 @@
 
 *A reversible, human-readable transform for QR Alphanumeric Mode.*
 
-> **Status:** Concept Draft (Revision 0.1)
+> **Status:** Concept Draft (Revision 0.2)
 
 ## Installation
 
@@ -102,17 +102,37 @@ Literal `%`
 
     %%
 
+Common comma
+
+    :
+
+Literal `:`
+
+    ::
+
+Common double quote
+
+    /
+
+Literal `/`
+
+    //
+
+Keyboard-shift punctuation uses `+` followed by the shifted key. For
+example, `!` encodes as `+1`, `@` as `+2`, `^` as `+6`, `&` as `+7`,
+and `?` as `+/`. Decoders also accept duplicate shift-style spellings
+for characters that already have shorter forms, such as `+4` for `$`,
+`+5` for `%`, and `+8` for `*`.
+
+Adjacent runs containing both the common character and its literal escape
+character are encoded with `%HH` byte escapes to preserve unambiguous
+decoding. For example, `,:` encodes as `%2C%3A`.
+
 ### Unsupported characters
 
 Source text is interpreted as Unicode text and encoded as UTF-8 bytes.
 Characters outside the supported alphabet are then represented by one
 `%HH` hexadecimal escape for each UTF-8 byte.
-
-    ,
-
-↓
-
-    %2C
 
     '
 
@@ -160,7 +180,8 @@ in source text:
 -   Digits: `0` through `9`
 -   Space: ` `
 -   QR Alphanumeric punctuation other than the escape characters `+` and
-    `%`: `$`, `*`, `-`, `.`, `/`, `:`
+    `%`, plus punctuation repurposed as common-character escapes (`:` and
+    `/`): `$`, `*`, `-`, `.`
 
 Lowercase ASCII alphabetic characters are converted to their uppercase
 forms in the output alphabet and are decoded back to lowercase. Original
@@ -172,6 +193,14 @@ The only escape forms are:
 
 -   `++` for a literal plus sign (`+`)
 -   `%%` for a literal percent sign (`%`)
+-   `:` for a comma (`,`)
+-   `::` for a literal colon (`:`)
+-   `/` for a double quote (`"`)
+-   `//` for a literal slash (`/`)
+-   `+1`, `+2`, `+3`, `+6`, `+7`, `+9`, `+0`, and `+/` for `!`, `@`,
+    `#`, `^`, `&`, `(`, `)`, and `?`
+-   Duplicate shift-style input forms `+4`, `+5`, and `+8` for `$`, `%`,
+    and `*`
 -   `%HH` for one escaped byte, where `HH` is two uppercase hexadecimal
     digits (`0`-`9`, `A`-`F`)
 -   `+X` for an original uppercase ASCII alphabetic character, where `X`
@@ -183,15 +212,20 @@ Decoding is performed strictly left to right. At each position, apply the
 first matching rule in this order:
 
 1.  `++` decodes to a literal `+`.
-2.  `%%` decodes to a literal `%`.
-3.  `%HH` decodes to the byte represented by hexadecimal value `HH`;
+2.  `+X` decodes to original uppercase alphabetic character `X`.
+3.  `+` followed by a shifted-key character decodes to its keyboard-shift
+    punctuation, such as `+1` to `!` and `+/` to `?`.
+4.  `::` decodes to a literal `:`; otherwise `:` decodes to `,`.
+5.  `//` decodes to a literal `/`; otherwise `/` decodes to `"`.
+6.  `%%` decodes to a literal `%`.
+7.  `%HH` decodes to the byte represented by hexadecimal value `HH`;
     adjacent byte escapes are collected and decoded as UTF-8 text.
-4.  `+X` decodes to original uppercase alphabetic character `X`.
-5.  Unescaped alphabetic characters `A` through `Z` decode to lowercase
+8.  Unescaped alphabetic characters `A` through `Z` decode to lowercase
     `a` through `z`.
-6.  Literal pass-through characters decode to themselves.
+9.  Literal pass-through characters decode to themselves.
 
-This precedence makes sequences beginning with `+` or `%` unambiguous.
+The encoder uses `%HH` byte escapes for adjacent runs such as `,,`, `::`,
+`,:`, `""`, `//`, and `"/` so this precedence remains unambiguous.
 
 ------------------------------------------------------------------------
 
@@ -207,7 +241,7 @@ The following encoded inputs are invalid:
 -   A bare trailing `+`.
 -   A bare trailing `%`.
 -   `+` followed by any character other than an uppercase ASCII letter
-    (`A` through `Z`) or another `+`.
+    (`A` through `Z`), another `+`, or a supported shifted key.
 -   `%` followed by fewer than two characters.
 -   `%` followed by characters that are not uppercase hexadecimal digits
     (`0` through `9` or `A` through `F`), except for `%%`, which is the
@@ -245,7 +279,11 @@ Encoded
 | `a+b` | `A++B` |
 | `50% off` | `50%% OFF` |
 | `can't` | `CAN%27T` |
-| `hello, world` | `HELLO%2C WORLD` |
+| `wow! @you #1 ^up & down (ok)?` | `WOW+1 +2YOU +31 +6UP +7 DOWN +9OK+0+/` |
+| `hello, world` | `HELLO: WORLD` |
+| `say "hi"` | `SAY /HI/` |
+| `ratio 1:2` | `RATIO 1::2` |
+| `path/to` | `PATH//TO` |
 | `é` | `%C3%A9` |
 | `😀` | `%F0%9F%98%80` |
 | `The quick brown fox jumps over the lazy dog.` | `+THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG.` |
@@ -259,12 +297,15 @@ Decode left to right. Literal escapes are restored as characters, while
 resulting byte sequences are decoded as UTF-8 text.
 
 1.  `++` → `+`
-2.  `%%` → `%`
-3.  One or more `%HH` escapes → bytes represented by hexadecimal values
+2.  `+X` → uppercase `X`
+3.  Shift-style punctuation escapes, such as `+1` → `!` and `+/` → `?`
+4.  `::` → `:`; otherwise `:` → `,`
+5.  `//` → `/`; otherwise `/` → `"`
+6.  `%%` → `%`
+7.  One or more `%HH` escapes → bytes represented by hexadecimal values
     `HH`, decoded as UTF-8
-4.  `+X` → uppercase `X`
-5.  Remaining alphabetic characters → lowercase
-6.  Remaining supported characters pass through unchanged
+8.  Remaining alphabetic characters → lowercase
+9.  Remaining supported characters pass through unchanged
 
 For example, `%C3%A9` reconstructs the UTF-8 bytes `C3 A9` and decodes
 to `é`; `%F0%9F%98%80` reconstructs the UTF-8 bytes `F0 9F 98 80` and
