@@ -185,6 +185,23 @@ Encoded
 
 ------------------------------------------------------------------------
 
+
+## Test Vectors
+
+| Original | Encoded |
+| --- | --- |
+| `hello world` | `HELLO WORLD` |
+| `Hello World` | `+HELLO +WORLD` |
+| `a+b` | `A++B` |
+| `50% off` | `50%% OFF` |
+| `can't` | `CAN%27T` |
+| `hello, world` | `HELLO%2C WORLD` |
+| `é` | `%C3%A9` |
+| `😀` | `%F0%9F%98%80` |
+| `The quick brown fox jumps over the lazy dog.` | `+THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG.` |
+
+------------------------------------------------------------------------
+
 ## Decoding
 
 Decode left to right. Literal escapes are restored as characters, while

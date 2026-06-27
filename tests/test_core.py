@@ -15,6 +15,29 @@ def test_decode_readme_example():
     )
 
 
+TEST_VECTORS = [
+    ("hello world", "HELLO WORLD"),
+    ("Hello World", "+HELLO +WORLD"),
+    ("a+b", "A++B"),
+    ("50% off", "50%% OFF"),
+    ("can't", "CAN%27T"),
+    ("hello, world", "HELLO%2C WORLD"),
+    ("é", "%C3%A9"),
+    ("😀", "%F0%9F%98%80"),
+    (
+        "The quick brown fox jumps over the lazy dog.",
+        "+THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG.",
+    ),
+]
+
+
+@pytest.mark.parametrize(("text", "encoded"), TEST_VECTORS)
+def test_test_vectors(text, encoded):
+    assert encode(text) == encoded
+    assert decode(encoded) == text
+    assert decode(encode(text)) == text
+
+
 @pytest.mark.parametrize(
     ("text", "encoded"),
     [
@@ -23,8 +46,6 @@ def test_decode_readme_example():
         ("+%", "++%%"),
         ("0123456789 $*-. /:", "0123456789 $*-. /:"),
         (",'", "%2C%27"),
-        ("é", "%C3%A9"),
-        ("😀", "%F0%9F%98%80"),
     ],
 )
 def test_encode_decode_cases(text, encoded):
