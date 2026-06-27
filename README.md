@@ -156,9 +156,13 @@ Common apostrophe / single quote
 
     /
 
-Literal `*` or `/`
+Literal `*`
 
-    %2A or %2F
+    %2A
+
+Literal `/`
+
+    //
 
 Literal `:` or `-`
 
@@ -235,6 +239,7 @@ The only escape forms are:
 -   `../` for a comma followed by an apostrophe / single quote (`,'`)
 -   `*` for a double quote (`"`)
 -   `/` for an apostrophe / single quote (`'`)
+-   `//` for a literal slash (`/`)
 -   `+1`, `+2`, `+3`, `+6`, `+7`, `+9`, `+0`, `+/`, and `+:` for `!`,
     `@`, `#`, `^`, `&`, `(`, `)`, `?`, and `;`
 -   `%HH` for one escaped byte, where `HH` is two uppercase hexadecimal
@@ -254,7 +259,7 @@ first matching rule in this order:
 4.  `..*` decodes to `,"`; `../` decodes to `,'`; otherwise `..` decodes
     to `, `.
 5.  `*` decodes to `"`.
-6.  `/` decodes to `'`.
+6.  `//` decodes to a literal `/`; otherwise `/` decodes to `'`.
 7.  `%%` decodes to a literal `%`.
 8.  `%HH` decodes to the byte represented by hexadecimal value `HH`;
     adjacent byte escapes are collected and decoded as UTF-8 text.
@@ -263,14 +268,15 @@ first matching rule in this order:
 10. Literal pass-through characters decode to themselves.
 
 The encoder uses `%HH` byte escapes for literal `..`, literal `*`, literal
-`/`, commas outside the reserved comma pairs, and comma-space before a quote
-so this precedence remains unambiguous.
+apostrophe/slash runs such as `''`, `//`, and `'/`, commas outside the
+reserved comma pairs, and comma-space before a quote so this precedence
+remains unambiguous.
 
 ### Canonical encoded form
 
 Some inputs are valid and decodable but are not the canonical spelling
 produced by `encode`. For example, percent escapes such as `%24`, `%25`,
-`%22`, and `%27` decode successfully, but shorter canonical spellings are
+`%22`, `%27`, and `%2F` decode successfully, but shorter canonical spellings are
 available.
 
 Use `is_canonical(encoded)` to test for the canonical encoder spelling.
@@ -336,7 +342,7 @@ Encoded
 | `hello, world` | `HELLO..WORLD` |
 | `say "hi"` | `SAY *HI*` |
 | `ratio 1:2` | `RATIO 1:2` |
-| `path/to` | `PATH%2FTO` |
+| `path/to` | `PATH//TO` |
 | `é` | `%C3%A9` |
 | `😀` | `%F0%9F%98%80` |
 | `The quick brown fox jumps over the lazy dog.` | `+THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG.` |
@@ -354,7 +360,7 @@ resulting byte sequences are decoded as UTF-8 text.
 3.  Shift-style punctuation escapes, such as `+1` → `!` and `+/` → `?`
 4.  `..*` → `,"`; `../` → `,'`; otherwise `..` → `, `
 5.  `*` → `"`
-6.  `/` → `'`
+6.  `//` → `/`; otherwise `/` → `'`
 7.  `%%` → `%`
 8.  One or more `%HH` escapes → bytes represented by hexadecimal values
     `HH`, decoded as UTF-8

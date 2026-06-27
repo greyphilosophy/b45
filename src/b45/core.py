@@ -21,7 +21,6 @@ _SHIFT_DECODE_BY_KEY = {
 _SHIFT_ENCODE_BY_CHAR = {value: key for key, value in _SHIFT_DECODE_BY_KEY.items()}
 _SPECIAL_SINGLE_DECODE_BY_CHAR = {
     "*": '"',
-    "/": "'",
 }
 
 
@@ -38,13 +37,27 @@ def _append_period_run(text: str, index: int, parts: list[str]) -> int:
     return index
 
 
+def _encode_apostrophe_slash_run(text: str, index: int, parts: list[str]) -> int:
+    start = index
+    while index < len(text) and text[index] in {"'", "/"}:
+        index += 1
+
+    if index - start == 1:
+        parts.append("/" if text[start] == "'" else "//")
+    else:
+        for char in text[start:index]:
+            _encode_utf8_escape(char, parts)
+    return index
+
+
 def encode(text: str) -> str:
     """Encode Unicode text as b45 QR Alphanumeric text.
 
     Lowercase ASCII letters are uppercased, original uppercase ASCII letters
     are escaped as ``+X``, literal ``+`` and ``%`` are doubled, common comma
-    pairs use ``..`` forms, apostrophes use ``/``, double quotes use ``*``,
-    semicolons use ``+:``, supported QR Alphanumeric punctuation passes
+    pairs use ``..`` forms, apostrophes use ``/``, literal slashes use
+    ``//``, double quotes use ``*``, semicolons use ``+:``, supported QR
+    Alphanumeric punctuation passes
     through, and every unsupported character is emitted as uppercase UTF-8
     ``%HH`` byte escapes.
     """
@@ -74,6 +87,9 @@ def encode(text: str) -> str:
         if char == ".":
             index = _append_period_run(text, index, parts)
             continue
+        if char in {"'", "/"}:
+            index = _encode_apostrophe_slash_run(text, index, parts)
+            continue
         _encode_char(char, parts)
         index += 1
     return "".join(parts)
@@ -90,9 +106,7 @@ def _encode_char(char: str, parts: list[str]) -> None:
         parts.append("%%")
     elif char == '"':
         parts.append("*")
-    elif char == "'":
-        parts.append("/")
-    elif char in {"*", "/", ","}:
+    elif char in {"*", ","}:
         _encode_utf8_escape(char, parts)
     elif char in _PASS_THROUGH:
         parts.append(char)
@@ -151,6 +165,11 @@ def decode(encoded: str) -> str:
             index += 1
             continue
 
+        if char == "/":
+            decoded, index = _decode_slash_escape(encoded, index)
+            output.append(decoded)
+            continue
+
         if char == "%":
             decoded, index = _decode_percent_run(encoded, index)
             output.append(decoded)
@@ -191,6 +210,12 @@ def _decode_dot_escape(encoded: str, index: int) -> tuple[str, int]:
         if next_char == "/":
             return ",'", index + 3
     return ", ", index + 2
+
+
+def _decode_slash_escape(encoded: str, index: int) -> tuple[str, int]:
+    if index + 1 < len(encoded) and encoded[index + 1] == "/":
+        return "/", index + 2
+    return "'", index + 1
 
 
 def _decode_percent_run(encoded: str, index: int) -> tuple[str, int]:

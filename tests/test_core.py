@@ -25,7 +25,7 @@ TEST_VECTORS = [
     ("hello, world", "HELLO..WORLD"),
     ('say "hi"', "SAY *HI*"),
     ("ratio 1:2", "RATIO 1:2"),
-    ("path/to", "PATH%2FTO"),
+    ("path/to", "PATH//TO"),
     ("é", "%C3%A9"),
     ("😀", "%F0%9F%98%80"),
     (
@@ -53,9 +53,9 @@ def test_test_vectors(text, encoded):
         ("0123456789 $*.", "0123456789 $%2A."),
         ("rock-n-roll", "ROCK-N-ROLL"),
         (",'", "../"),
-        ("''", "//"),
+        ("''", "%27%27"),
         ("'-", "/-"),
-        ('"/,:', "*%2F%2C:"),
+        ('"/,:', "*//%2C:"),
     ],
 )
 def test_encode_decode_cases(text, encoded):
@@ -76,6 +76,7 @@ def test_is_canonical_accepts_canonical_forms(encoded):
         "%25",  # decodes as %, but %% is canonical
         "%22",  # decodes as double quote, but * is shorter
         "%27",  # decodes as apostrophe, but / is shorter
+        "%2F",  # decodes as slash, but // is shorter
     ],
 )
 def test_is_canonical_rejects_decodable_non_canonical_forms(encoded):
