@@ -119,6 +119,60 @@ Hexadecimal digits use uppercase `A–F`.
 
 ------------------------------------------------------------------------
 
+## Formal Syntax
+
+The complete allowed output alphabet is exactly:
+
+    0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:
+
+Every encoded b45 output character MUST be a member of this alphabet.
+Because this alphabet is identical to the QR Code Alphanumeric Mode
+character set, encoded b45 output is always valid QR Alphanumeric Mode
+text.
+
+### Literal pass-through characters
+
+The following characters pass through unchanged when they occur literally
+in source text:
+
+-   Digits: `0` through `9`
+-   Space: ` `
+-   QR Alphanumeric punctuation other than the escape characters `+` and
+    `%`: `$`, `*`, `-`, `.`, `/`, `:`
+
+Lowercase ASCII alphabetic characters are converted to their uppercase
+forms in the output alphabet and are decoded back to lowercase. Original
+uppercase ASCII alphabetic characters are escaped.
+
+### Escape forms
+
+The only escape forms are:
+
+-   `++` for a literal plus sign (`+`)
+-   `%%` for a literal percent sign (`%`)
+-   `%HH` for one escaped byte, where `HH` is two uppercase hexadecimal
+    digits (`0`-`9`, `A`-`F`)
+-   `+X` for an original uppercase ASCII alphabetic character, where `X`
+    is `A` through `Z`
+
+### Decoding precedence
+
+Decoding is performed strictly left to right. At each position, apply the
+first matching rule in this order:
+
+1.  `++` decodes to a literal `+`.
+2.  `%%` decodes to a literal `%`.
+3.  `%HH` decodes to the byte represented by hexadecimal value `HH`;
+    adjacent byte escapes are collected and decoded as UTF-8 text.
+4.  `+X` decodes to original uppercase alphabetic character `X`.
+5.  Unescaped alphabetic characters `A` through `Z` decode to lowercase
+    `a` through `z`.
+6.  Literal pass-through characters decode to themselves.
+
+This precedence makes sequences beginning with `+` or `%` unambiguous.
+
+------------------------------------------------------------------------
+
 ## Example
 
 Original
