@@ -1,6 +1,6 @@
 import pytest
 
-from b45 import decode, encode
+from b45 import decode, encode, is_canonical
 
 
 def test_encode_readme_example():
@@ -58,6 +58,35 @@ def test_test_vectors(text, encoded):
 def test_encode_decode_cases(text, encoded):
     assert encode(text) == encoded
     assert decode(encoded) == text
+
+
+@pytest.mark.parametrize("encoded", ["HELLO", "%%", "%C3%A9"])
+def test_is_canonical_accepts_canonical_forms(encoded):
+    assert is_canonical(encoded) is True
+    assert encode(decode(encoded)) == encoded
+
+
+@pytest.mark.parametrize(
+    "encoded",
+    [
+        "+4",  # decodes as $, but literal $ is shorter
+        "+5",  # decodes as %, but %% is canonical
+        "+8",  # decodes as *, but literal * is shorter
+        "%24",  # decodes as $, but literal $ is shorter
+        "%25",  # decodes as %, but %% is canonical
+        "%2A",  # decodes as *, but literal * is shorter
+        "%2C",  # decodes as comma, but : is shorter
+        "%22",  # decodes as double quote, but / is shorter
+    ],
+)
+def test_is_canonical_rejects_decodable_non_canonical_forms(encoded):
+    assert decode(encoded)
+    assert is_canonical(encoded) is False
+    assert encode(decode(encoded)) != encoded
+
+
+def test_is_canonical_rejects_invalid_encoded_input():
+    assert is_canonical("+") is False
 
 
 def test_decode_accepts_duplicate_shift_spellings():

@@ -104,6 +104,20 @@ def _encode_utf8_escape(char: str, parts: list[str]) -> None:
     parts.extend(f"%{byte:02X}" for byte in char.encode("utf-8"))
 
 
+def is_canonical(encoded: str) -> bool:
+    """Return whether encoded b45 text is in canonical encoder form.
+
+    Canonical input is valid encoded b45 text that is byte-for-byte equal to
+    the result of re-encoding its decoded Unicode text. Invalid encoded input
+    is not canonical.
+    """
+
+    try:
+        return encode(decode(encoded)) == encoded
+    except ValueError:
+        return False
+
+
 def decode(encoded: str) -> str:
     """Decode b45 QR Alphanumeric text back to Unicode text.
 
