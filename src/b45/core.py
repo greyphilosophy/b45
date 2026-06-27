@@ -7,7 +7,7 @@ import string
 _QR_ALPHANUMERIC = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:"
 _PASS_THROUGH = set(string.digits + " $*-. ")
 _HEX = set(string.hexdigits.upper())
-_SHIFT_ESCAPES = {
+_SHIFT_DECODE_BY_KEY = {
     "1": "!",
     "2": "@",
     "3": "#",
@@ -20,10 +20,15 @@ _SHIFT_ESCAPES = {
     "0": ")",
     "/": "?",
 }
-_SHIFT_ESCAPE_KEYS_BY_CHAR = {value: key for key, value in _SHIFT_ESCAPES.items()}
-_SPECIAL_SINGLE_ESCAPES = {",": ":", ":": "::", '"': "/", "/": "//"}
-_COLON_AMBIGUOUS_CHARS = ",:"
-_SLASH_AMBIGUOUS_CHARS = '"/'
+_SHIFT_ENCODE_BY_CHAR = {value: key for key, value in _SHIFT_DECODE_BY_KEY.items()}
+_COMMA_COLON_GROUP = ",:"
+_QUOTE_SLASH_GROUP = '"/'
+_SPECIAL_SINGLE_ESCAPE_BY_CHAR = {
+    ",": ":",
+    ":": "::",
+    '"': "/",
+    "/": "//",
+}
 
 
 def encode(text: str) -> str:
@@ -42,11 +47,11 @@ def encode(text: str) -> str:
     index = 0
     while index < len(text):
         char = text[index]
-        if char in _COLON_AMBIGUOUS_CHARS:
-            index = _encode_special_run(text, index, _COLON_AMBIGUOUS_CHARS, parts)
+        if char in _COMMA_COLON_GROUP:
+            index = _encode_special_run(text, index, _COMMA_COLON_GROUP, parts)
             continue
-        if char in _SLASH_AMBIGUOUS_CHARS:
-            index = _encode_special_run(text, index, _SLASH_AMBIGUOUS_CHARS, parts)
+        if char in _QUOTE_SLASH_GROUP:
+            index = _encode_special_run(text, index, _QUOTE_SLASH_GROUP, parts)
             continue
         _encode_char(char, parts)
         index += 1
@@ -59,7 +64,7 @@ def _encode_special_run(text: str, index: int, alphabet: str, parts: list[str]) 
         index += 1
 
     if index - start == 1:
-        parts.append(_SPECIAL_SINGLE_ESCAPES[text[start]])
+        parts.append(_SPECIAL_SINGLE_ESCAPE_BY_CHAR[text[start]])
         return index
 
     for char in text[start:index]:
@@ -78,8 +83,8 @@ def _encode_char(char: str, parts: list[str]) -> None:
         parts.append("%%")
     elif char in _PASS_THROUGH:
         parts.append(char)
-    elif char in _SHIFT_ESCAPE_KEYS_BY_CHAR:
-        parts.append(f"+{_SHIFT_ESCAPE_KEYS_BY_CHAR[char]}")
+    elif char in _SHIFT_ENCODE_BY_CHAR:
+        parts.append(f"+{_SHIFT_ENCODE_BY_CHAR[char]}")
     else:
         _encode_utf8_escape(char, parts)
 
@@ -145,8 +150,8 @@ def _decode_plus_escape(encoded: str, index: int) -> tuple[str, int]:
         return "+", index + 2
     if "A" <= next_char <= "Z":
         return next_char, index + 2
-    if next_char in _SHIFT_ESCAPES:
-        return _SHIFT_ESCAPES[next_char], index + 2
+    if next_char in _SHIFT_DECODE_BY_KEY:
+        return _SHIFT_DECODE_BY_KEY[next_char], index + 2
 
     raise ValueError(f"invalid '+' escape at position {index}: '+{next_char}'")
 
