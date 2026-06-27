@@ -5,7 +5,7 @@ from __future__ import annotations
 import string
 
 _QR_ALPHANUMERIC = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:"
-_PASS_THROUGH = set(string.digits + " $*-. ")
+_PASS_THROUGH = set(string.digits + " $*. ")
 _HEX = set(string.hexdigits.upper())
 _SHIFT_DECODE_BY_KEY = {
     "1": "!",
@@ -23,20 +23,26 @@ _SPECIAL_RUN_ALPHABET_BY_CHAR = {
     ":": ",:",
     '"': '"/',
     "/": '"/',
+    "'": "'-",
+    "-": "'-",
 }
 _SPECIAL_SINGLE_ESCAPE_BY_CHAR = {
     ",": ":",
     ":": "::",
     '"': "/",
     "/": "//",
+    "'": "-",
+    "-": "--",
 }
 _SPECIAL_DOUBLE_ESCAPE_BY_CHAR = {
     ":": ":",
     "/": "/",
+    "-": "-",
 }
 _SPECIAL_SINGLE_DECODE_BY_CHAR = {
     ":": ",",
     "/": '"',
+    "-": "'",
 }
 
 
@@ -45,8 +51,9 @@ def encode(text: str) -> str:
 
     Lowercase ASCII letters are uppercased, original uppercase ASCII letters
     are escaped as ``+X``, literal ``+`` and ``%`` are doubled, isolated common
-    ``,`` and ``"`` characters use ``:`` and ``/``, isolated literal ``:`` and
-    ``/`` use ``::`` and ``//``, keyboard-shift punctuation uses ``+``
+    ``,`` and ``"`` characters use ``:`` and ``/``, isolated apostrophes use
+    ``-``, isolated literal ``:``, ``/``, and ``-`` use ``::``, ``//``, and
+    ``--``, keyboard-shift punctuation uses ``+``
     escapes, supported QR Alphanumeric punctuation passes through, and every
     unsupported character is emitted as uppercase UTF-8
     ``%HH`` byte escapes.
