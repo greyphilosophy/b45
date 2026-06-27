@@ -245,6 +245,17 @@ The encoding is unambiguous and fully reversible.
 
 ------------------------------------------------------------------------
 
+## Relationship to Base45
+
+b45 is not a general binary-to-text Base45 codec. It is a
+readability-preserving text transform.
+
+Its output alphabet intentionally matches QR Alphanumeric Mode. The name
+reflects the 45-character QR Alphanumeric alphabet, but the algorithm is
+distinct from standardized Base45 binary encodings.
+
+------------------------------------------------------------------------
+
 ## Relationship to Compression
 
 b45 is best viewed as a **transport optimization**, not a traditional
