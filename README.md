@@ -263,7 +263,4 @@ Possible improvements include:
 
 ## License
 
-Undecided.
-
-This repository currently documents the concept and serves as a
-checkpoint for future research.
+Licensed under the Apache License, Version 2.0. See `LICENSE` for details.
