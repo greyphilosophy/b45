@@ -110,64 +110,23 @@ def decode(encoded: str) -> str:
             raise ValueError(f"invalid b45 character at position {index}: {char!r}")
 
         if char == "+":
-            if index + 1 >= length:
-                raise ValueError("dangling '+' escape at end of input")
-            next_char = encoded[index + 1]
-            if next_char == "+":
-                output.append("+")
-            elif "A" <= next_char <= "Z":
-                output.append(next_char)
-            elif next_char in _SHIFT_ESCAPES:
-                output.append(_SHIFT_ESCAPES[next_char])
-            else:
-                raise ValueError(f"invalid '+' escape at position {index}: '+{next_char}'")
-            index += 2
+            decoded, index = _decode_plus_escape(encoded, index)
+            output.append(decoded)
             continue
 
         if char == ":":
-            if index + 1 < length and encoded[index + 1] == ":":
-                output.append(":")
-                index += 2
-            else:
-                output.append(",")
-                index += 1
+            decoded, index = _decode_colon_escape(encoded, index)
+            output.append(decoded)
             continue
 
         if char == "/":
-            if index + 1 < length and encoded[index + 1] == "/":
-                output.append("/")
-                index += 2
-            else:
-                output.append('"')
-                index += 1
+            decoded, index = _decode_slash_escape(encoded, index)
+            output.append(decoded)
             continue
 
         if char == "%":
-            if index + 1 < length and encoded[index + 1] == "%":
-                output.append("%")
-                index += 2
-                continue
-
-            bytes_run = bytearray()
-            start = index
-            while index < length and encoded[index] == "%":
-                if index + 2 >= length:
-                    raise ValueError(f"incomplete percent escape at position {index}")
-                hex_digits = encoded[index + 1 : index + 3]
-                if not _is_hex_byte(hex_digits):
-                    if index == start:
-                        raise ValueError(
-                            f"invalid percent escape at position {index}: '%{hex_digits}'"
-                        )
-                    break
-                bytes_run.append(int(hex_digits, 16))
-                index += 3
-            try:
-                output.append(bytes(bytes_run).decode("utf-8"))
-            except UnicodeDecodeError as exc:
-                raise ValueError(
-                    f"invalid UTF-8 byte escape run starting at position {start}"
-                ) from exc
+            decoded, index = _decode_percent_run(encoded, index)
+            output.append(decoded)
             continue
 
         if "A" <= char <= "Z":
@@ -179,6 +138,62 @@ def decode(encoded: str) -> str:
         index += 1
 
     return "".join(output)
+
+
+def _decode_plus_escape(encoded: str, index: int) -> tuple[str, int]:
+    length = len(encoded)
+    if index + 1 >= length:
+        raise ValueError("dangling '+' escape at end of input")
+
+    next_char = encoded[index + 1]
+    if next_char == "+":
+        return "+", index + 2
+    if "A" <= next_char <= "Z":
+        return next_char, index + 2
+    if next_char in _SHIFT_ESCAPES:
+        return _SHIFT_ESCAPES[next_char], index + 2
+
+    raise ValueError(f"invalid '+' escape at position {index}: '+{next_char}'")
+
+
+def _decode_colon_escape(encoded: str, index: int) -> tuple[str, int]:
+    if index + 1 < len(encoded) and encoded[index + 1] == ":":
+        return ":", index + 2
+    return ",", index + 1
+
+
+def _decode_slash_escape(encoded: str, index: int) -> tuple[str, int]:
+    if index + 1 < len(encoded) and encoded[index + 1] == "/":
+        return "/", index + 2
+    return '"', index + 1
+
+
+def _decode_percent_run(encoded: str, index: int) -> tuple[str, int]:
+    length = len(encoded)
+    if index + 1 < length and encoded[index + 1] == "%":
+        return "%", index + 2
+
+    bytes_run = bytearray()
+    start = index
+    while index < length and encoded[index] == "%":
+        if index + 2 >= length:
+            raise ValueError(f"incomplete percent escape at position {index}")
+        hex_digits = encoded[index + 1 : index + 3]
+        if not _is_hex_byte(hex_digits):
+            if index == start:
+                raise ValueError(
+                    f"invalid percent escape at position {index}: '%{hex_digits}'"
+                )
+            break
+        bytes_run.append(int(hex_digits, 16))
+        index += 3
+
+    try:
+        return bytes(bytes_run).decode("utf-8"), index
+    except UnicodeDecodeError as exc:
+        raise ValueError(
+            f"invalid UTF-8 byte escape run starting at position {start}"
+        ) from exc
 
 
 def _is_hex_byte(value: str) -> bool:
