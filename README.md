@@ -227,6 +227,22 @@ first matching rule in this order:
 The encoder uses `%HH` byte escapes for adjacent runs such as `,,`, `::`,
 `,:`, `""`, `//`, and `"/` so this precedence remains unambiguous.
 
+### Canonical encoded form
+
+Some inputs are valid and decodable but are not the canonical spelling
+produced by `encode`. For example, duplicate shift-style input forms such
+as `+4`, `+5`, and `+8` decode as `$`, `%`, and `*`, but the canonical
+spellings are `$`, `%%`, and `*`. Likewise, percent escapes such as
+`%24`, `%25`, `%2A`, `%2C`, and `%22` decode successfully, but shorter
+canonical spellings are available.
+
+Use `is_canonical(encoded)` to test for the canonical encoder spelling.
+Equivalently, valid encoded input is canonical when:
+
+    encode(decode(encoded)) == encoded
+
+Invalid encoded input is not canonical.
+
 ------------------------------------------------------------------------
 
 
