@@ -16,12 +16,28 @@ def test_encode_text_argument():
     exit_code, stdout, stderr = run_cli("encode", "Hello World")
 
     assert exit_code == 0
-    assert stdout == "+HELLO +WORLD\n"
+    assert stdout == "+HELLO +WORLD"
     assert stderr == ""
 
 
 def test_decode_text_argument():
     exit_code, stdout, stderr = run_cli("decode", "+HELLO +WORLD")
+
+    assert exit_code == 0
+    assert stdout == "Hello World"
+    assert stderr == ""
+
+
+def test_encode_text_argument_preserves_explicit_trailing_newline():
+    exit_code, stdout, stderr = run_cli("encode", "Hello World\n")
+
+    assert exit_code == 0
+    assert stdout == "+HELLO +WORLD%0A"
+    assert stderr == ""
+
+
+def test_decode_text_argument_preserves_explicit_trailing_newline():
+    exit_code, stdout, stderr = run_cli("decode", "+HELLO +WORLD%0A")
 
     assert exit_code == 0
     assert stdout == "Hello World\n"
@@ -32,12 +48,28 @@ def test_encode_reads_stdin_when_text_argument_is_omitted():
     exit_code, stdout, stderr = run_cli("encode", stdin="Hello World")
 
     assert exit_code == 0
-    assert stdout == "+HELLO +WORLD\n"
+    assert stdout == "+HELLO +WORLD"
     assert stderr == ""
 
 
 def test_decode_reads_stdin_when_text_argument_is_omitted():
     exit_code, stdout, stderr = run_cli("decode", stdin="+HELLO +WORLD")
+
+    assert exit_code == 0
+    assert stdout == "Hello World"
+    assert stderr == ""
+
+
+def test_encode_stdin_preserves_single_trailing_newline():
+    exit_code, stdout, stderr = run_cli("encode", stdin="Hello World\n")
+
+    assert exit_code == 0
+    assert stdout == "+HELLO +WORLD%0A"
+    assert stderr == ""
+
+
+def test_decode_stdin_preserves_single_trailing_newline():
+    exit_code, stdout, stderr = run_cli("decode", stdin="+HELLO +WORLD%0A")
 
     assert exit_code == 0
     assert stdout == "Hello World\n"
