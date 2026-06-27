@@ -148,25 +148,27 @@ Literal `/`
 
     //
 
+Common apostrophe / single quote
+
+    -
+
+Literal `-`
+
+    --
+
 Keyboard-shift punctuation uses `+` followed by the shifted key. For
 example, `!` encodes as `+1`, `@` as `+2`, `^` as `+6`, `&` as `+7`,
 and `?` as `+/`.
 
 Adjacent runs containing both the common character and its literal escape
 character are encoded with `%HH` byte escapes to preserve unambiguous
-decoding. For example, `,:` encodes as `%2C%3A`.
+decoding. For example, `,:` encodes as `%2C%3A`, and `''` encodes as `%27%27`.
 
 ### Unsupported characters
 
 Source text is interpreted as Unicode text and encoded as UTF-8 bytes.
 Characters outside the supported alphabet are then represented by one
 `%HH` hexadecimal escape for each UTF-8 byte.
-
-    '
-
-↓
-
-    %27
 
 Non-ASCII characters are encoded as their UTF-8 byte sequences.
 
@@ -208,8 +210,8 @@ in source text:
 -   Digits: `0` through `9`
 -   Space: ` `
 -   QR Alphanumeric punctuation other than the escape characters `+` and
-    `%`, plus punctuation repurposed as common-character escapes (`:` and
-    `/`): `$`, `*`, `-`, `.`
+    `%`, plus punctuation repurposed as common-character escapes (`:`,
+    `/`, and `-`): `$`, `*`, `.`
 
 Lowercase ASCII alphabetic characters are converted to their uppercase
 forms in the output alphabet and are decoded back to lowercase. Original
@@ -225,6 +227,8 @@ The only escape forms are:
 -   `::` for a literal colon (`:`)
 -   `/` for a double quote (`"`)
 -   `//` for a literal slash (`/`)
+-   `-` for an apostrophe / single quote (`'`)
+-   `--` for a literal hyphen-minus (`-`)
 -   `+1`, `+2`, `+3`, `+6`, `+7`, `+9`, `+0`, and `+/` for `!`, `@`,
     `#`, `^`, `&`, `(`, `)`, and `?`
 -   `%HH` for one escaped byte, where `HH` is two uppercase hexadecimal
