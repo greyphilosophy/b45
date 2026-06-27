@@ -21,13 +21,25 @@ _SHIFT_DECODE_BY_KEY = {
     "/": "?",
 }
 _SHIFT_ENCODE_BY_CHAR = {value: key for key, value in _SHIFT_DECODE_BY_KEY.items()}
-_COMMA_COLON_GROUP = ",:"
-_QUOTE_SLASH_GROUP = '"/'
+_SPECIAL_RUN_ALPHABET_BY_CHAR = {
+    ",": ",:",
+    ":": ",:",
+    '"': '"/',
+    "/": '"/',
+}
 _SPECIAL_SINGLE_ESCAPE_BY_CHAR = {
     ",": ":",
     ":": "::",
     '"': "/",
     "/": "//",
+}
+_SPECIAL_DOUBLE_ESCAPE_BY_CHAR = {
+    ":": ":",
+    "/": "/",
+}
+_SPECIAL_SINGLE_DECODE_BY_CHAR = {
+    ":": ",",
+    "/": '"',
 }
 
 
@@ -47,11 +59,10 @@ def encode(text: str) -> str:
     index = 0
     while index < len(text):
         char = text[index]
-        if char in _COMMA_COLON_GROUP:
-            index = _encode_special_run(text, index, _COMMA_COLON_GROUP, parts)
-            continue
-        if char in _QUOTE_SLASH_GROUP:
-            index = _encode_special_run(text, index, _QUOTE_SLASH_GROUP, parts)
+        if char in _SPECIAL_RUN_ALPHABET_BY_CHAR:
+            index = _encode_special_run(
+                text, index, _SPECIAL_RUN_ALPHABET_BY_CHAR[char], parts
+            )
             continue
         _encode_char(char, parts)
         index += 1
@@ -114,13 +125,8 @@ def decode(encoded: str) -> str:
             output.append(decoded)
             continue
 
-        if char == ":":
-            decoded, index = _decode_colon_escape(encoded, index)
-            output.append(decoded)
-            continue
-
-        if char == "/":
-            decoded, index = _decode_slash_escape(encoded, index)
+        if char in _SPECIAL_SINGLE_DECODE_BY_CHAR:
+            decoded, index = _decode_special_escape(encoded, index)
             output.append(decoded)
             continue
 
@@ -156,16 +162,11 @@ def _decode_plus_escape(encoded: str, index: int) -> tuple[str, int]:
     raise ValueError(f"invalid '+' escape at position {index}: '+{next_char}'")
 
 
-def _decode_colon_escape(encoded: str, index: int) -> tuple[str, int]:
-    if index + 1 < len(encoded) and encoded[index + 1] == ":":
-        return ":", index + 2
-    return ",", index + 1
-
-
-def _decode_slash_escape(encoded: str, index: int) -> tuple[str, int]:
-    if index + 1 < len(encoded) and encoded[index + 1] == "/":
-        return "/", index + 2
-    return '"', index + 1
+def _decode_special_escape(encoded: str, index: int) -> tuple[str, int]:
+    char = encoded[index]
+    if index + 1 < len(encoded) and encoded[index + 1] == char:
+        return _SPECIAL_DOUBLE_ESCAPE_BY_CHAR[char], index + 2
+    return _SPECIAL_SINGLE_DECODE_BY_CHAR[char], index + 1
 
 
 def _decode_percent_run(encoded: str, index: int) -> tuple[str, int]:
