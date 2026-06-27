@@ -4,6 +4,28 @@
 
 > **Status:** Concept Draft (Revision 0.1)
 
+## Installation
+
+```bash
+python -m pip install -e .
+```
+
+## Python API
+
+```python
+from b45 import encode, decode
+
+encoded = encode("Hello World")
+decoded = decode(encoded)
+```
+
+## Command Line
+
+```bash
+b45 encode "Hello World"
+b45 decode "+HELLO +WORLD"
+```
+
 ## Overview
 
 **b45** is a reversible text transform designed to reduce the size of QR
