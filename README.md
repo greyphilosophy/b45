@@ -82,8 +82,9 @@ Literal `%`
 
 ### Unsupported characters
 
-Characters outside the supported alphabet are encoded using hexadecimal
-escapes.
+Source text is interpreted as Unicode text and encoded as UTF-8 bytes.
+Characters outside the supported alphabet are then represented by one
+`%HH` hexadecimal escape for each UTF-8 byte.
 
     ,
 
@@ -96,6 +97,23 @@ escapes.
 ↓
 
     %27
+
+Non-ASCII characters are encoded as their UTF-8 byte sequences.
+
+    é
+
+↓
+
+    %C3%A9
+
+Characters outside the Basic Multilingual Plane, such as emoji, may
+require multiple escapes.
+
+    😀
+
+↓
+
+    %F0%9F%98%80
 
 Hexadecimal digits use uppercase `A–F`.
 
@@ -115,14 +133,21 @@ Encoded
 
 ## Decoding
 
-Decode left to right.
+Decode left to right. Literal escapes are restored as characters, while
+`%HH` byte escapes are collected and reconstructed into bytes. The
+resulting byte sequences are decoded as UTF-8 text.
 
 1.  `++` → `+`
 2.  `%%` → `%`
-3.  `%HH` → byte represented by hexadecimal value `HH`
+3.  One or more `%HH` escapes → bytes represented by hexadecimal values
+    `HH`, decoded as UTF-8
 4.  `+X` → uppercase `X`
 5.  Remaining alphabetic characters → lowercase
 6.  Remaining supported characters pass through unchanged
+
+For example, `%C3%A9` reconstructs the UTF-8 bytes `C3 A9` and decodes
+to `é`; `%F0%9F%98%80` reconstructs the UTF-8 bytes `F0 9F 98 80` and
+decodes to `😀`.
 
 The encoding is unambiguous and fully reversible.
 
