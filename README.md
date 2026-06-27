@@ -120,9 +120,7 @@ Literal `/`
 
 Keyboard-shift punctuation uses `+` followed by the shifted key. For
 example, `!` encodes as `+1`, `@` as `+2`, `^` as `+6`, `&` as `+7`,
-and `?` as `+/`. Decoders also accept duplicate shift-style spellings
-for characters that already have shorter forms, such as `+4` for `$`,
-`+5` for `%`, and `+8` for `*`.
+and `?` encodes as `+/`.
 
 Adjacent runs containing both the common character and its literal escape
 character are encoded with `%HH` byte escapes to preserve unambiguous
@@ -199,8 +197,6 @@ The only escape forms are:
 -   `//` for a literal slash (`/`)
 -   `+1`, `+2`, `+3`, `+6`, `+7`, `+9`, `+0`, and `+/` for `!`, `@`,
     `#`, `^`, `&`, `(`, `)`, and `?`
--   Duplicate shift-style input forms `+4`, `+5`, and `+8` for `$`, `%`,
-    and `*`
 -   `%HH` for one escaped byte, where `HH` is two uppercase hexadecimal
     digits (`0`-`9`, `A`-`F`)
 -   `+X` for an original uppercase ASCII alphabetic character, where `X`

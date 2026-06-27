@@ -60,10 +60,6 @@ def test_encode_decode_cases(text, encoded):
     assert decode(encoded) == text
 
 
-def test_decode_accepts_duplicate_shift_spellings():
-    assert decode("+4+5+8") == "$%*"
-
-
 def test_mixed_round_trip():
     text = 'Hello, "QR" + b45 / 100%: café 😀'
     assert decode(encode(text)) == text
@@ -77,6 +73,9 @@ def test_mixed_round_trip():
         "+%",
         "+-",
         "+:",
+        "+4",
+        "+5",
+        "+8",
         "%A",  # percent followed by fewer than two characters
         "%G0",  # percent followed by non-hex characters
         "%0G",
