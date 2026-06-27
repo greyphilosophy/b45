@@ -26,6 +26,28 @@ b45 encode "Hello World"
 b45 decode "+HELLO +WORLD"
 ```
 
+When `TEXT` is omitted, `b45 encode` and `b45 decode` read all text from
+standard input exactly as provided. This is lossless: trailing newlines are
+part of the input, so they are encoded and decoded instead of being stripped.
+
+For example, `printf` does not add a newline by default:
+
+```bash
+printf 'Hello World' | b45 encode
+# +HELLO +WORLD
+```
+
+By contrast, `echo` normally appends a trailing newline, and b45 preserves it
+as `%0A`:
+
+```bash
+echo 'Hello World' | b45 encode
+# +HELLO +WORLD%0A
+```
+
+Use `printf` when you do not want a trailing newline included in the encoded
+output.
+
 ## Overview
 
 **b45** is a reversible text transform designed to reduce the size of QR
