@@ -173,6 +173,34 @@ This precedence makes sequences beginning with `+` or `%` unambiguous.
 
 ------------------------------------------------------------------------
 
+
+## Invalid Encoded Input
+
+Decoders MUST treat malformed encoded input as invalid and reject it with
+an explicit error. Decoders MUST NOT silently guess, repair, or reinterpret
+malformed input.
+
+The following encoded inputs are invalid:
+
+-   A bare trailing `+`.
+-   A bare trailing `%`.
+-   `+` followed by any character other than an uppercase ASCII letter
+    (`A` through `Z`) or another `+`.
+-   `%` followed by fewer than two characters.
+-   `%` followed by characters that are not uppercase hexadecimal digits
+    (`0` through `9` or `A` through `F`), except for `%%`, which is the
+    literal percent escape.
+-   One or more `%HH` byte escapes whose bytes do not form valid UTF-8.
+-   Any character outside the QR Alphanumeric alphabet:
+
+        0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:
+
+Encoding remains total for all valid Unicode strings: every valid Unicode
+string can be encoded as b45. These rejection requirements apply only when
+decoding malformed encoded input.
+
+------------------------------------------------------------------------
+
 ## Example
 
 Original

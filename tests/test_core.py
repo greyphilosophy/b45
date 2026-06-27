@@ -58,7 +58,27 @@ def test_mixed_round_trip():
     assert decode(encode(text)) == text
 
 
-@pytest.mark.parametrize("encoded", ["+", "+1", "%", "%G0", "%C3%28", "_"])
+@pytest.mark.parametrize(
+    "encoded",
+    [
+        "+",  # bare trailing plus
+        "%",  # bare trailing percent
+        "+1",  # plus followed by non-letter, non-plus
+        "+%",
+        "+-",
+        "%A",  # percent followed by fewer than two characters
+        "%G0",  # percent followed by non-hex characters
+        "%0G",
+        "%C3%28",  # percent escapes that form invalid UTF-8
+        "_",  # outside the QR Alphanumeric alphabet
+        "abc",
+    ],
+)
 def test_invalid_encoded_input_raises_value_error(encoded):
     with pytest.raises(ValueError):
         decode(encoded)
+
+
+def test_encoding_is_total_for_valid_unicode_strings():
+    text = "Hello, b45 + 100% — café 😀\0"
+    assert decode(encode(text)) == text
