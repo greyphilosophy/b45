@@ -69,9 +69,6 @@ def test_is_canonical_accepts_canonical_forms(encoded):
 @pytest.mark.parametrize(
     "encoded",
     [
-        "+4",  # decodes as $, but literal $ is shorter
-        "+5",  # decodes as %, but %% is canonical
-        "+8",  # decodes as *, but literal * is shorter
         "%24",  # decodes as $, but literal $ is shorter
         "%25",  # decodes as %, but %% is canonical
         "%2A",  # decodes as *, but literal * is shorter
@@ -89,10 +86,6 @@ def test_is_canonical_rejects_invalid_encoded_input():
     assert is_canonical("+") is False
 
 
-def test_decode_accepts_duplicate_shift_spellings():
-    assert decode("+4+5+8") == "$%*"
-
-
 def test_mixed_round_trip():
     text = 'Hello, "QR" + b45 / 100%: café 😀'
     assert decode(encode(text)) == text
@@ -106,6 +99,9 @@ def test_mixed_round_trip():
         "+%",
         "+-",
         "+:",
+        "+4",
+        "+5",
+        "+8",
         "%A",  # percent followed by fewer than two characters
         "%G0",  # percent followed by non-hex characters
         "%0G",

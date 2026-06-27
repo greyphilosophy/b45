@@ -142,9 +142,7 @@ Literal `/`
 
 Keyboard-shift punctuation uses `+` followed by the shifted key. For
 example, `!` encodes as `+1`, `@` as `+2`, `^` as `+6`, `&` as `+7`,
-and `?` as `+/`. Decoders also accept duplicate shift-style spellings
-for characters that already have shorter forms, such as `+4` for `$`,
-`+5` for `%`, and `+8` for `*`.
+and `?` as `+/`.
 
 Adjacent runs containing both the common character and its literal escape
 character are encoded with `%HH` byte escapes to preserve unambiguous
@@ -221,8 +219,6 @@ The only escape forms are:
 -   `//` for a literal slash (`/`)
 -   `+1`, `+2`, `+3`, `+6`, `+7`, `+9`, `+0`, and `+/` for `!`, `@`,
     `#`, `^`, `&`, `(`, `)`, and `?`
--   Duplicate shift-style input forms `+4`, `+5`, and `+8` for `$`, `%`,
-    and `*`
 -   `%HH` for one escaped byte, where `HH` is two uppercase hexadecimal
     digits (`0`-`9`, `A`-`F`)
 -   `+X` for an original uppercase ASCII alphabetic character, where `X`
@@ -252,11 +248,9 @@ The encoder uses `%HH` byte escapes for adjacent runs such as `,,`, `::`,
 ### Canonical encoded form
 
 Some inputs are valid and decodable but are not the canonical spelling
-produced by `encode`. For example, duplicate shift-style input forms such
-as `+4`, `+5`, and `+8` decode as `$`, `%`, and `*`, but the canonical
-spellings are `$`, `%%`, and `*`. Likewise, percent escapes such as
-`%24`, `%25`, `%2A`, `%2C`, and `%22` decode successfully, but shorter
-canonical spellings are available.
+produced by `encode`. For example, percent escapes such as `%24`, `%25`,
+`%2A`, `%2C`, and `%22` decode successfully, but shorter canonical
+spellings are available.
 
 Use `is_canonical(encoded)` to test for the canonical encoder spelling.
 Equivalently, valid encoded input is canonical when:
