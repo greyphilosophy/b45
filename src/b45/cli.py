@@ -35,7 +35,7 @@ def _run(
     text = args.text if args.text is not None else stdin.read()
 
     if args.command == "encode":
-        print(encode(text), file=stdout)
+        stdout.write(encode(text))
         return 0
 
     try:
@@ -44,7 +44,7 @@ def _run(
         print(f"b45: decode error: {exc}", file=stderr)
         return 1
 
-    print(result, file=stdout)
+    stdout.write(result)
     return 0
 
 
