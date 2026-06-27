@@ -21,6 +21,9 @@ _SHIFT_ESCAPES = {
     "/": "?",
 }
 _SHIFT_ESCAPE_KEYS_BY_CHAR = {value: key for key, value in _SHIFT_ESCAPES.items()}
+_SPECIAL_SINGLE_ESCAPES = {",": ":", ":": "::", '"': "/", "/": "//"}
+_COLON_AMBIGUOUS_CHARS = ",:"
+_SLASH_AMBIGUOUS_CHARS = '"/'
 
 
 def encode(text: str) -> str:
@@ -39,11 +42,11 @@ def encode(text: str) -> str:
     index = 0
     while index < len(text):
         char = text[index]
-        if char in ',:':
-            index = _encode_special_run(text, index, ',:', parts)
+        if char in _COLON_AMBIGUOUS_CHARS:
+            index = _encode_special_run(text, index, _COLON_AMBIGUOUS_CHARS, parts)
             continue
-        if char in '"/':
-            index = _encode_special_run(text, index, '"/', parts)
+        if char in _SLASH_AMBIGUOUS_CHARS:
+            index = _encode_special_run(text, index, _SLASH_AMBIGUOUS_CHARS, parts)
             continue
         _encode_char(char, parts)
         index += 1
@@ -56,15 +59,7 @@ def _encode_special_run(text: str, index: int, alphabet: str, parts: list[str]) 
         index += 1
 
     if index - start == 1:
-        char = text[start]
-        if char == ",":
-            parts.append(":")
-        elif char == ":":
-            parts.append("::")
-        elif char == '"':
-            parts.append("/")
-        else:
-            parts.append("//")
+        parts.append(_SPECIAL_SINGLE_ESCAPES[text[start]])
         return index
 
     for char in text[start:index]:
