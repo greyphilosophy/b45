@@ -132,37 +132,44 @@ Literal `%`
 
     %%
 
-Common comma
+Common comma followed by a space
 
-    :
+    ..
 
-Literal `:`
+Comma followed by a double quote
 
-    ::
+    ..*
+
+Comma followed by an apostrophe / single quote
+
+    ../
+
+Other commas
+
+    %2C
 
 Common double quote
 
-    /
-
-Literal `/`
-
-    //
+    *
 
 Common apostrophe / single quote
 
-    -
+    /
 
-Literal `-`
+Literal `*` or `/`
 
-    --
+    %2A or %2F
+
+Literal `:` or `-`
+
+    : or -
 
 Keyboard-shift punctuation uses `+` followed by the shifted key. For
 example, `!` encodes as `+1`, `@` as `+2`, `^` as `+6`, `&` as `+7`,
-and `?` as `+/`.
+`;` as `+:`, and `?` as `+/`.
 
-Adjacent runs containing both the common character and its literal escape
-character are encoded with `%HH` byte escapes to preserve unambiguous
-decoding. For example, `,:` encodes as `%2C%3A`, and `''` encodes as `%27%27`.
+Literal `..` is encoded with `%HH` byte escapes to preserve unambiguous
+decoding because `..` is reserved for the common comma-space pair.
 
 ### Unsupported characters
 
@@ -210,8 +217,8 @@ in source text:
 -   Digits: `0` through `9`
 -   Space: ` `
 -   QR Alphanumeric punctuation other than the escape characters `+` and
-    `%`, plus punctuation repurposed as common-character escapes (`:`,
-    `/`, and `-`): `$`, `*`, `.`
+    `%`, plus punctuation repurposed as common-character escapes (`*`
+    and `/`): `$`, `.`, `-`, `:`
 
 Lowercase ASCII alphabetic characters are converted to their uppercase
 forms in the output alphabet and are decoded back to lowercase. Original
@@ -223,14 +230,13 @@ The only escape forms are:
 
 -   `++` for a literal plus sign (`+`)
 -   `%%` for a literal percent sign (`%`)
--   `:` for a comma (`,`)
--   `::` for a literal colon (`:`)
--   `/` for a double quote (`"`)
--   `//` for a literal slash (`/`)
--   `-` for an apostrophe / single quote (`'`)
--   `--` for a literal hyphen-minus (`-`)
--   `+1`, `+2`, `+3`, `+6`, `+7`, `+9`, `+0`, and `+/` for `!`, `@`,
-    `#`, `^`, `&`, `(`, `)`, and `?`
+-   `..` for a comma followed by a space (`, `)
+-   `..*` for a comma followed by a double quote (`,"`)
+-   `../` for a comma followed by an apostrophe / single quote (`,'`)
+-   `*` for a double quote (`"`)
+-   `/` for an apostrophe / single quote (`'`)
+-   `+1`, `+2`, `+3`, `+6`, `+7`, `+9`, `+0`, `+/`, and `+:` for `!`,
+    `@`, `#`, `^`, `&`, `(`, `)`, `?`, and `;`
 -   `%HH` for one escaped byte, where `HH` is two uppercase hexadecimal
     digits (`0`-`9`, `A`-`F`)
 -   `+X` for an original uppercase ASCII alphabetic character, where `X`
@@ -245,24 +251,27 @@ first matching rule in this order:
 2.  `+X` decodes to original uppercase alphabetic character `X`.
 3.  `+` followed by a shifted-key character decodes to its keyboard-shift
     punctuation, such as `+1` to `!` and `+/` to `?`.
-4.  `::` decodes to a literal `:`; otherwise `:` decodes to `,`.
-5.  `//` decodes to a literal `/`; otherwise `/` decodes to `"`.
-6.  `%%` decodes to a literal `%`.
-7.  `%HH` decodes to the byte represented by hexadecimal value `HH`;
+4.  `..*` decodes to `,"`; `../` decodes to `,'`; otherwise `..` decodes
+    to `, `.
+5.  `*` decodes to `"`.
+6.  `/` decodes to `'`.
+7.  `%%` decodes to a literal `%`.
+8.  `%HH` decodes to the byte represented by hexadecimal value `HH`;
     adjacent byte escapes are collected and decoded as UTF-8 text.
-8.  Unescaped alphabetic characters `A` through `Z` decode to lowercase
+9.  Unescaped alphabetic characters `A` through `Z` decode to lowercase
     `a` through `z`.
-9.  Literal pass-through characters decode to themselves.
+10. Literal pass-through characters decode to themselves.
 
-The encoder uses `%HH` byte escapes for adjacent runs such as `,,`, `::`,
-`,:`, `""`, `//`, and `"/` so this precedence remains unambiguous.
+The encoder uses `%HH` byte escapes for literal `..`, literal `*`, literal
+`/`, commas outside the reserved comma pairs, and comma-space before a quote
+so this precedence remains unambiguous.
 
 ### Canonical encoded form
 
 Some inputs are valid and decodable but are not the canonical spelling
 produced by `encode`. For example, percent escapes such as `%24`, `%25`,
-`%2A`, `%2C`, and `%22` decode successfully, but shorter canonical
-spellings are available.
+`%22`, and `%27` decode successfully, but shorter canonical spellings are
+available.
 
 Use `is_canonical(encoded)` to test for the canonical encoder spelling.
 Equivalently, valid encoded input is canonical when:
@@ -322,12 +331,12 @@ Encoded
 | `Hello World` | `+HELLO +WORLD` |
 | `a+b` | `A++B` |
 | `50% off` | `50%% OFF` |
-| `can't` | `CAN%27T` |
-| `wow! @you #1 ^up & down (ok)?` | `WOW+1 +2YOU +31 +6UP +7 DOWN +9OK+0+/` |
-| `hello, world` | `HELLO: WORLD` |
-| `say "hi"` | `SAY /HI/` |
-| `ratio 1:2` | `RATIO 1::2` |
-| `path/to` | `PATH//TO` |
+| `can't` | `CAN/T` |
+| `wow! @you #1 ^up & down (ok)?;` | `WOW+1 +2YOU +31 +6UP +7 DOWN +9OK+0+/+:` |
+| `hello, world` | `HELLO..WORLD` |
+| `say "hi"` | `SAY *HI*` |
+| `ratio 1:2` | `RATIO 1:2` |
+| `path/to` | `PATH%2FTO` |
 | `é` | `%C3%A9` |
 | `😀` | `%F0%9F%98%80` |
 | `The quick brown fox jumps over the lazy dog.` | `+THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG.` |
@@ -343,13 +352,14 @@ resulting byte sequences are decoded as UTF-8 text.
 1.  `++` → `+`
 2.  `+X` → uppercase `X`
 3.  Shift-style punctuation escapes, such as `+1` → `!` and `+/` → `?`
-4.  `::` → `:`; otherwise `:` → `,`
-5.  `//` → `/`; otherwise `/` → `"`
-6.  `%%` → `%`
-7.  One or more `%HH` escapes → bytes represented by hexadecimal values
+4.  `..*` → `,"`; `../` → `,'`; otherwise `..` → `, `
+5.  `*` → `"`
+6.  `/` → `'`
+7.  `%%` → `%`
+8.  One or more `%HH` escapes → bytes represented by hexadecimal values
     `HH`, decoded as UTF-8
-8.  Remaining alphabetic characters → lowercase
-9.  Remaining supported characters pass through unchanged
+9.  Remaining alphabetic characters → lowercase
+10. Remaining supported characters pass through unchanged
 
 For example, `%C3%A9` reconstructs the UTF-8 bytes `C3 A9` and decodes
 to `é`; `%F0%9F%98%80` reconstructs the UTF-8 bytes `F0 9F 98 80` and
