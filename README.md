@@ -132,21 +132,13 @@ Literal `%`
 
     %%
 
-Common comma followed by a space
+Comma
 
-    ..
+    :
 
-Comma followed by a double quote
+Literal `:`
 
-    ..*
-
-Comma followed by an apostrophe / single quote
-
-    ../
-
-Other commas
-
-    %2C
+    ::
 
 Common double quote
 
@@ -164,16 +156,17 @@ Literal `/`
 
     //
 
-Literal `:` or `-`
+Literal `-`
 
-    : or -
+    -
 
 Keyboard-shift punctuation uses `+` followed by the shifted key. For
 example, `!` encodes as `+1`, `@` as `+2`, `^` as `+6`, `&` as `+7`,
 `;` as `+:`, and `?` as `+/`.
 
-Literal `..` is encoded with `%HH` byte escapes to preserve unambiguous
-decoding because `..` is reserved for the common comma-space pair.
+Literal `:` is doubled as `::` to preserve unambiguous decoding because
+`:` is reserved for commas. A comma immediately before a literal colon is
+emitted as `%2C` so left-to-right decoding remains unambiguous.
 
 ### Unsupported characters
 
@@ -221,8 +214,8 @@ in source text:
 -   Digits: `0` through `9`
 -   Space: ` `
 -   QR Alphanumeric punctuation other than the escape characters `+` and
-    `%`, plus punctuation repurposed as common-character escapes (`*`
-    and `/`): `$`, `.`, `-`, `:`
+    `%`, plus punctuation repurposed as common-character escapes (`*`,
+    `/`, and `:`): `$`, `.`, `-`
 
 Lowercase ASCII alphabetic characters are converted to their uppercase
 forms in the output alphabet and are decoded back to lowercase. Original
@@ -234,9 +227,8 @@ The only escape forms are:
 
 -   `++` for a literal plus sign (`+`)
 -   `%%` for a literal percent sign (`%`)
--   `..` for a comma followed by a space (`, `)
--   `..*` for a comma followed by a double quote (`,"`)
--   `../` for a comma followed by an apostrophe / single quote (`,'`)
+-   `:` for a comma (`,`)
+-   `::` for a literal colon (`:`)
 -   `*` for a double quote (`"`)
 -   `/` for an apostrophe / single quote (`'`)
 -   `//` for a literal slash (`/`)
@@ -256,8 +248,7 @@ first matching rule in this order:
 2.  `+X` decodes to original uppercase alphabetic character `X`.
 3.  `+` followed by a shifted-key character decodes to its keyboard-shift
     punctuation, such as `+1` to `!` and `+/` to `?`.
-4.  `..*` decodes to `,"`; `../` decodes to `,'`; otherwise `..` decodes
-    to `, `.
+4.  `::` decodes to a literal `:`; otherwise `:` decodes to `,`.
 5.  `*` decodes to `"`.
 6.  `//` decodes to a literal `/`; otherwise `/` decodes to `'`.
 7.  `%%` decodes to a literal `%`.
@@ -267,10 +258,9 @@ first matching rule in this order:
     `a` through `z`.
 10. Literal pass-through characters decode to themselves.
 
-The encoder uses `%HH` byte escapes for literal `..`, literal `*`, literal
-apostrophe/slash runs such as `''`, `//`, and `'/`, commas outside the
-reserved comma pairs, and comma-space before a quote so this precedence
-remains unambiguous.
+The encoder uses `%HH` byte escapes for literal `*`, apostrophe/slash runs
+such as `''`, `//`, and `'/`, and commas immediately before literal colons so
+this precedence remains unambiguous.
 
 ### Canonical encoded form
 
@@ -339,9 +329,9 @@ Encoded
 | `50% off` | `50%% OFF` |
 | `can't` | `CAN/T` |
 | `wow! @you #1 ^up & down (ok)?;` | `WOW+1 +2YOU +31 +6UP +7 DOWN +9OK+0+/+:` |
-| `hello, world` | `HELLO..WORLD` |
+| `hello, world` | `HELLO: WORLD` |
 | `say "hi"` | `SAY *HI*` |
-| `ratio 1:2` | `RATIO 1:2` |
+| `ratio 1:2` | `RATIO 1::2` |
 | `path/to` | `PATH//TO` |
 | `é` | `%C3%A9` |
 | `😀` | `%F0%9F%98%80` |
@@ -358,7 +348,7 @@ resulting byte sequences are decoded as UTF-8 text.
 1.  `++` → `+`
 2.  `+X` → uppercase `X`
 3.  Shift-style punctuation escapes, such as `+1` → `!` and `+/` → `?`
-4.  `..*` → `,"`; `../` → `,'`; otherwise `..` → `, `
+4.  `::` → `:`; otherwise `:` → `,`
 5.  `*` → `"`
 6.  `//` → `/`; otherwise `/` → `'`
 7.  `%%` → `%`

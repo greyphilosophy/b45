@@ -54,11 +54,11 @@ def encode(text: str) -> str:
     """Encode Unicode text as b45 QR Alphanumeric text.
 
     Lowercase ASCII letters are uppercased, original uppercase ASCII letters
-    are escaped as ``+X``, literal ``+`` and ``%`` are doubled, common comma
-    pairs use ``..`` forms, apostrophes use ``/``, literal slashes use
-    ``//``, double quotes use ``*``, semicolons use ``+:``, supported QR
-    Alphanumeric punctuation passes
-    through, and every unsupported character is emitted as uppercase UTF-8
+    are escaped as ``+X``, literal ``+`` and ``%`` are doubled, commas use
+    ``:``, literal colons use ``::``, apostrophes use ``/``, literal slashes use ``//``, double
+    quotes use ``*``, semicolons use ``+:``, supported QR Alphanumeric
+    punctuation passes through, and every unsupported character is emitted as
+    uppercase UTF-8
     ``%HH`` byte escapes.
     """
 
@@ -67,22 +67,11 @@ def encode(text: str) -> str:
     while index < len(text):
         char = text[index]
         if char == ",":
-            if (
-                text.startswith(', ', index)
-                and not text.startswith(', "', index)
-                and not text.startswith(", '", index)
-            ):
-                parts.append("..")
-                index += 2
-            elif text.startswith(',"', index):
-                parts.append("..*")
-                index += 2
-            elif text.startswith(",'", index):
-                parts.append("../")
-                index += 2
-            else:
+            if index + 1 < len(text) and text[index + 1] == ":":
                 _encode_utf8_escape(char, parts)
-                index += 1
+            else:
+                parts.append(":")
+            index += 1
             continue
         if char == ".":
             index = _append_period_run(text, index, parts)
@@ -106,8 +95,10 @@ def _encode_char(char: str, parts: list[str]) -> None:
         parts.append("%%")
     elif char == '"':
         parts.append("*")
-    elif char in {"*", ","}:
+    elif char == "*":
         _encode_utf8_escape(char, parts)
+    elif char == ":":
+        parts.append("::")
     elif char in _PASS_THROUGH:
         parts.append(char)
     elif char in _SHIFT_ENCODE_BY_CHAR:
@@ -155,8 +146,8 @@ def decode(encoded: str) -> str:
             output.append(decoded)
             continue
 
-        if char == "." and index + 1 < length and encoded[index + 1] == ".":
-            decoded, index = _decode_dot_escape(encoded, index)
+        if char == ":":
+            decoded, index = _decode_colon_escape(encoded, index)
             output.append(decoded)
             continue
 
@@ -202,14 +193,10 @@ def _decode_plus_escape(encoded: str, index: int) -> tuple[str, int]:
     raise ValueError(f"invalid '+' escape at position {index}: '+{next_char}'")
 
 
-def _decode_dot_escape(encoded: str, index: int) -> tuple[str, int]:
-    if index + 2 < len(encoded):
-        next_char = encoded[index + 2]
-        if next_char == "*":
-            return ',"', index + 3
-        if next_char == "/":
-            return ",'", index + 3
-    return ", ", index + 2
+def _decode_colon_escape(encoded: str, index: int) -> tuple[str, int]:
+    if index + 1 < len(encoded) and encoded[index + 1] == ":":
+        return ":", index + 2
+    return ",", index + 1
 
 
 def _decode_slash_escape(encoded: str, index: int) -> tuple[str, int]:

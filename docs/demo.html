@@ -125,23 +125,12 @@
       while (index < text.length) {
         const char = codePointAt(text, index);
         if (char === ',') {
-          if (
-            text.startsWith(', ', index)
-            && !text.startsWith(', "', index)
-            && !text.startsWith(", '", index)
-          ) {
-            parts.push('..');
-            index += 2;
-          } else if (text.startsWith(',"', index)) {
-            parts.push('..*');
-            index += 2;
-          } else if (text.startsWith(",'", index)) {
-            parts.push('../');
-            index += 2;
-          } else {
+          if (index + 1 < text.length && text[index + 1] === ':') {
             encodeUtf8Escape(char, parts);
-            index += 1;
+          } else {
+            parts.push(':');
           }
+          index += 1;
           continue;
         }
         if (char === '.') {
@@ -203,8 +192,10 @@
         parts.push('%%');
       } else if (char === '"') {
         parts.push('*');
-      } else if (char === '*' || char === ',') {
+      } else if (char === '*') {
         encodeUtf8Escape(char, parts);
+      } else if (char === ':') {
+        parts.push('::');
       } else if (PASS_THROUGH.has(char)) {
         parts.push(char);
       } else if (SHIFT_ENCODE_BY_CHAR[char]) {
@@ -233,8 +224,8 @@
           const [decoded, nextIndex] = decodePlusEscape(encoded, index);
           output.push(decoded);
           index = nextIndex;
-        } else if (char === '.' && index + 1 < encoded.length && encoded[index + 1] === '.') {
-          const [decoded, nextIndex] = decodeDotEscape(encoded, index);
+        } else if (char === ':') {
+          const [decoded, nextIndex] = decodeColonEscape(encoded, index);
           output.push(decoded);
           index = nextIndex;
         } else if (SPECIAL_SINGLE_DECODE_BY_CHAR[char]) {
@@ -272,13 +263,11 @@
       throw new Error(`Invalid '+' escape at position ${index}: '+${nextChar}'`);
     }
 
-    function decodeDotEscape(encoded, index) {
-      if (index + 2 < encoded.length) {
-        const nextChar = encoded[index + 2];
-        if (nextChar === '*') return [',"', index + 3];
-        if (nextChar === '/') return [",'", index + 3];
+    function decodeColonEscape(encoded, index) {
+      if (index + 1 < encoded.length && encoded[index + 1] === ':') {
+        return [':', index + 2];
       }
-      return [', ', index + 2];
+      return [',', index + 1];
     }
 
     function decodeSlashEscape(encoded, index) {
