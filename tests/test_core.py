@@ -1,6 +1,10 @@
 import pytest
 
-from b45 import decode, encode, is_canonical
+from b45 import __version__, decode, encode, is_canonical
+
+
+def test_package_version_is_v1_release():
+    assert __version__ == "1.0.0"
 
 
 def test_encode_readme_example():
