@@ -106,7 +106,7 @@
 
   <script>
     const QR_ALPHANUMERIC = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:';
-    const PASS_THROUGH = new Set('0123456789 $.-: '.split(''));
+    const PASS_THROUGH = new Set('0123456789 $.-:'.split(''));
     const SHIFT_DECODE_BY_KEY = {
       '1': '!', '2': '@', '3': '#', '6': '^',
       '7': '&', '9': '(', '0': ')', '/': '?', ':': ';',
@@ -133,6 +133,19 @@
           index += 1;
           continue;
         }
+        if (char === ' ') {
+          index = appendSpaceRun(text, index, parts);
+          continue;
+        }
+        if (char === '\n') {
+          if (index + 1 === text.length) {
+            encodeUtf8Escape(char, parts);
+          } else {
+            parts.push('   ');
+          }
+          index += 1;
+          continue;
+        }
         if (char === '.') {
           index = appendPeriodRun(text, index, parts);
           continue;
@@ -149,6 +162,24 @@
 
     function codePointAt(text, index) {
       return String.fromCodePoint(text.codePointAt(index));
+    }
+
+    function appendSpaceRun(text, index, parts) {
+      const start = index;
+      while (index < text.length && text[index] === ' ') {
+        index += 1;
+      }
+      const adjacentToNewline = (start > 0 && text[start - 1] === '\n')
+        || (index < text.length && text[index] === '\n');
+      const atEnd = index === text.length;
+      if (index - start === 1 && !adjacentToNewline && !atEnd) {
+        parts.push(' ');
+      } else {
+        for (let cursor = start; cursor < index; cursor += 1) {
+          encodeUtf8Escape(' ', parts);
+        }
+      }
+      return index;
     }
 
     function appendPeriodRun(text, index, parts) {
@@ -239,6 +270,10 @@
           const [decoded, nextIndex] = decodePercentRun(encoded, index);
           output.push(decoded);
           index = nextIndex;
+        } else if (char === ' ') {
+          const [decoded, nextIndex] = decodeSpaceRun(encoded, index);
+          output.push(decoded);
+          index = nextIndex;
         } else if (char >= 'A' && char <= 'Z') {
           output.push(char.toLowerCase());
           index += 1;
@@ -250,6 +285,15 @@
         }
       }
       return output.join('');
+    }
+
+    function decodeSpaceRun(encoded, index) {
+      const start = index;
+      while (index < encoded.length && encoded[index] === ' ') {
+        index += 1;
+      }
+      const count = index - start;
+      return ['\n'.repeat(Math.floor(count / 3)) + ' '.repeat(count % 3), index];
     }
 
     function decodePlusEscape(encoded, index) {

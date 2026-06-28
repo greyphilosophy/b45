@@ -32,6 +32,12 @@ TEST_VECTORS = [
     ("path/to", "PATH//TO"),
     ("é", "%C3%A9"),
     ("😀", "%F0%9F%98%80"),
+    ("hello\nworld", "HELLO   WORLD"),
+    ("hello  world", "HELLO%20%20WORLD"),
+    ("hello \n world", "HELLO%20   %20WORLD"),
+    ("hello\n", "HELLO%0A"),
+    ("hello\n\n", "HELLO   %0A"),
+    ("hello ", "HELLO%20"),
     (
         "The quick brown fox jumps over the lazy dog.",
         "+THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG.",
@@ -96,6 +102,25 @@ def test_is_canonical_rejects_invalid_encoded_input():
 def test_mixed_round_trip():
     text = 'Hello, "QR" + b45 / 100%: café 😀'
     assert decode(encode(text)) == text
+
+
+def test_space_runs_and_newlines_round_trip_exactly():
+    text = "Line one\n  indented\ntrailing space \n next\n"
+
+    encoded = encode(text)
+
+    assert "   " in encoded
+    assert encoded.endswith("%0A")
+    assert decode(encoded) == text
+
+
+def test_encoded_output_uses_qr_alphanumeric_alphabet_for_newlines_and_spaces():
+    encoded = encode("a\n  b")
+
+    assert all(
+        char in "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:"
+        for char in encoded
+    )
 
 
 @pytest.mark.parametrize(
