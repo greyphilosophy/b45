@@ -32,7 +32,8 @@ def _append_space_run(text: str, index: int, parts: list[str]) -> int:
     adjacent_to_newline = (start > 0 and text[start - 1] == "\n") or (
         index < len(text) and text[index] == "\n"
     )
-    if index - start == 1 and not adjacent_to_newline:
+    at_end = index == len(text)
+    if index - start == 1 and not adjacent_to_newline and not at_end:
         parts.append(" ")
     else:
         for char in text[start:index]:
@@ -73,8 +74,10 @@ def encode(text: str) -> str:
     are escaped as ``+X``, literal ``+`` and ``%`` are doubled, commas use
     ``:``, literal colons use ``::``, apostrophes use ``/``, literal slashes use ``//``, double
     quotes use ``*``, semicolons use ``+:``, supported QR Alphanumeric
-    punctuation passes through, newlines use three consecutive spaces,
-    literal runs of multiple spaces use UTF-8 ``%HH`` byte escapes, and every
+    punctuation passes through, non-terminal newlines use three consecutive
+    spaces, terminal newlines and terminal spaces use UTF-8 ``%HH`` byte
+    escapes, literal runs of multiple spaces use UTF-8 ``%HH`` byte escapes,
+    and every
     unsupported character is emitted as uppercase UTF-8 ``%HH`` byte escapes.
     """
 
@@ -93,7 +96,10 @@ def encode(text: str) -> str:
             index = _append_space_run(text, index, parts)
             continue
         if char == "\n":
-            parts.append("   ")
+            if index + 1 == len(text):
+                _encode_utf8_escape(char, parts)
+            else:
+                parts.append("   ")
             index += 1
             continue
         if char == ".":

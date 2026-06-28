@@ -35,6 +35,9 @@ TEST_VECTORS = [
     ("hello\nworld", "HELLO   WORLD"),
     ("hello  world", "HELLO%20%20WORLD"),
     ("hello \n world", "HELLO%20   %20WORLD"),
+    ("hello\n", "HELLO%0A"),
+    ("hello\n\n", "HELLO   %0A"),
+    ("hello ", "HELLO%20"),
     (
         "The quick brown fox jumps over the lazy dog.",
         "+THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG.",
@@ -102,12 +105,12 @@ def test_mixed_round_trip():
 
 
 def test_space_runs_and_newlines_round_trip_exactly():
-    text = "Line one\n  indented\ntrailing space \n next"
+    text = "Line one\n  indented\ntrailing space \n next\n"
 
     encoded = encode(text)
 
     assert "   " in encoded
-    assert "%0A" not in encoded
+    assert encoded.endswith("%0A")
     assert decode(encoded) == text
 
 

@@ -44,11 +44,12 @@ printf 'Hello World' | b45 encode
 ```
 
 By contrast, `echo` normally appends a trailing newline, and b45 preserves it
-as three consecutive spaces:
+as `%0A` because a three-space marker at the very end of encoded text is easy
+to miss or trim accidentally:
 
 ```bash
 echo 'Hello World' | b45 encode
-# "+HELLO +WORLD   "
+# +HELLO +WORLD%0A
 ```
 
 Use `printf` when you do not want a trailing newline included in the encoded
@@ -177,12 +178,16 @@ emitted as `%2C` so left-to-right decoding remains unambiguous.
 ### Spaces and newlines
 
 A single literal space passes through unchanged when it is not adjacent to
-another space or a newline. Newline characters encode as three consecutive
-spaces so encoded prose preserves visible line breaks in QR Alphanumeric text.
-Because three spaces are reserved for newlines, literal runs of multiple spaces
-and spaces adjacent to newlines are emitted as `%20` byte escapes. This keeps
-indentation, trailing spaces, and encoded newlines unambiguous and fully
-reversible.
+another space or a newline and not at the end of the document. Non-terminal
+newline characters encode as three
+consecutive spaces so encoded prose preserves visible line breaks in QR
+Alphanumeric text. A newline at the very end of the source document is emitted
+as `%0A` instead, avoiding trailing encoded spaces that readers or tools might
+miss or trim. Terminal literal spaces are emitted as `%20` for the same reason.
+Because three spaces are reserved for non-terminal newlines, literal runs of
+multiple spaces and spaces adjacent to newlines are emitted as `%20` byte
+escapes. This keeps indentation, trailing spaces, and encoded newlines
+unambiguous and fully reversible.
 
     line one
     line two
@@ -263,7 +268,7 @@ The only escape forms are:
 -   `//` for a literal slash (`/`)
 -   `+1`, `+2`, `+3`, `+6`, `+7`, `+9`, `+0`, `+/`, and `+:` for `!`,
     `@`, `#`, `^`, `&`, `(`, `)`, `?`, and `;`
--   Three consecutive spaces for a newline (`\n`)
+-   Three consecutive spaces for a non-terminal newline (`\n`)
 -   `%HH` for one escaped byte, where `HH` is two uppercase hexadecimal
     digits (`0`-`9`, `A`-`F`)
 -   `+X` for an original uppercase ASCII alphabetic character, where `X`
@@ -284,7 +289,7 @@ first matching rule in this order:
 7.  `%%` decodes to a literal `%`.
 8.  Each complete run of three spaces decodes to a newline; any remaining
     one or two spaces decode to literal spaces for compatibility with valid
-    encoded input.
+    encoded input. Terminal newlines use the `%0A` byte escape form below.
 9.  `%HH` decodes to the byte represented by hexadecimal value `HH`;
     adjacent byte escapes are collected and decoded as UTF-8 text.
 10. Unescaped alphabetic characters `A` through `Z` decode to lowercase
@@ -370,6 +375,8 @@ Encoded
 | `é` | `%C3%A9` |
 | `😀` | `%F0%9F%98%80` |
 | `hello\nworld` | `HELLO   WORLD` |
+| `hello\n` | `HELLO%0A` |
+| `hello ` | `HELLO%20` |
 | `hello  world` | `HELLO%20%20WORLD` |
 | `The quick brown fox jumps over the lazy dog.` | `+THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG.` |
 
@@ -389,7 +396,7 @@ resulting byte sequences are decoded as UTF-8 text.
 6.  `//` → `/`; otherwise `/` → `'`
 7.  `%%` → `%`
 8.  Each complete run of three spaces → newline; leftover one or two spaces
-    remain literal spaces
+    remain literal spaces. Terminal newlines use `%0A`.
 9.  One or more `%HH` escapes → bytes represented by hexadecimal values
     `HH`, decoded as UTF-8
 10. Remaining alphabetic characters → lowercase

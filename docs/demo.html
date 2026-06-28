@@ -138,7 +138,11 @@
           continue;
         }
         if (char === '\n') {
-          parts.push('   ');
+          if (index + 1 === text.length) {
+            encodeUtf8Escape(char, parts);
+          } else {
+            parts.push('   ');
+          }
           index += 1;
           continue;
         }
@@ -167,7 +171,8 @@
       }
       const adjacentToNewline = (start > 0 && text[start - 1] === '\n')
         || (index < text.length && text[index] === '\n');
-      if (index - start === 1 && !adjacentToNewline) {
+      const atEnd = index === text.length;
+      if (index - start === 1 && !adjacentToNewline && !atEnd) {
         parts.push(' ');
       } else {
         for (let cursor = start; cursor < index; cursor += 1) {
