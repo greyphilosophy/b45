@@ -44,11 +44,11 @@ printf 'Hello World' | b45 encode
 ```
 
 By contrast, `echo` normally appends a trailing newline, and b45 preserves it
-as `%0A`:
+as three consecutive spaces:
 
 ```bash
 echo 'Hello World' | b45 encode
-# +HELLO +WORLD%0A
+# "+HELLO +WORLD   "
 ```
 
 Use `printf` when you do not want a trailing newline included in the encoded
@@ -174,6 +174,29 @@ Literal `:` is doubled as `::` to preserve unambiguous decoding because
 `:` is reserved for commas. A comma immediately before a literal colon is
 emitted as `%2C` so left-to-right decoding remains unambiguous.
 
+### Spaces and newlines
+
+A single literal space passes through unchanged when it is not adjacent to
+another space or a newline. Newline characters encode as three consecutive
+spaces so encoded prose preserves visible line breaks in QR Alphanumeric text.
+Because three spaces are reserved for newlines, literal runs of multiple spaces
+and spaces adjacent to newlines are emitted as `%20` byte escapes. This keeps
+indentation, trailing spaces, and encoded newlines unambiguous and fully
+reversible.
+
+    line one
+    line two
+
+↓
+
+    LINE ONE   LINE TWO
+
+    a  b
+
+↓
+
+    A%20%20B
+
 ### Unsupported characters
 
 Source text is interpreted as Unicode text and encoded as UTF-8 bytes.
@@ -218,7 +241,7 @@ The following characters pass through unchanged when they occur literally
 in source text:
 
 -   Digits: `0` through `9`
--   Space: ` `
+-   Single non-adjacent space: ` `
 -   QR Alphanumeric punctuation other than the escape characters `+` and
     `%`, plus punctuation repurposed as common-character escapes (`*`,
     `/`, and `:`): `$`, `.`, `-`
@@ -240,6 +263,7 @@ The only escape forms are:
 -   `//` for a literal slash (`/`)
 -   `+1`, `+2`, `+3`, `+6`, `+7`, `+9`, `+0`, `+/`, and `+:` for `!`,
     `@`, `#`, `^`, `&`, `(`, `)`, `?`, and `;`
+-   Three consecutive spaces for a newline (`\n`)
 -   `%HH` for one escaped byte, where `HH` is two uppercase hexadecimal
     digits (`0`-`9`, `A`-`F`)
 -   `+X` for an original uppercase ASCII alphabetic character, where `X`
@@ -258,15 +282,19 @@ first matching rule in this order:
 5.  `*` decodes to `"`.
 6.  `//` decodes to a literal `/`; otherwise `/` decodes to `'`.
 7.  `%%` decodes to a literal `%`.
-8.  `%HH` decodes to the byte represented by hexadecimal value `HH`;
+8.  Each complete run of three spaces decodes to a newline; any remaining
+    one or two spaces decode to literal spaces for compatibility with valid
+    encoded input.
+9.  `%HH` decodes to the byte represented by hexadecimal value `HH`;
     adjacent byte escapes are collected and decoded as UTF-8 text.
-9.  Unescaped alphabetic characters `A` through `Z` decode to lowercase
+10. Unescaped alphabetic characters `A` through `Z` decode to lowercase
     `a` through `z`.
-10. Literal pass-through characters decode to themselves.
+11. Literal pass-through characters decode to themselves.
 
-The encoder uses `%HH` byte escapes for literal `*`, apostrophe/slash runs
-such as `''`, `//`, and `'/`, and commas immediately before literal colons so
-this precedence remains unambiguous.
+The encoder uses `%HH` byte escapes for literal `*`, literal runs of multiple
+spaces, spaces adjacent to newlines, apostrophe/slash runs such as `''`, `//`,
+and `'/`, and commas immediately before literal colons so this precedence
+remains unambiguous.
 
 ### Canonical encoded form
 
@@ -341,6 +369,8 @@ Encoded
 | `path/to` | `PATH//TO` |
 | `é` | `%C3%A9` |
 | `😀` | `%F0%9F%98%80` |
+| `hello\nworld` | `HELLO   WORLD` |
+| `hello  world` | `HELLO%20%20WORLD` |
 | `The quick brown fox jumps over the lazy dog.` | `+THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG.` |
 
 ------------------------------------------------------------------------
@@ -358,10 +388,12 @@ resulting byte sequences are decoded as UTF-8 text.
 5.  `*` → `"`
 6.  `//` → `/`; otherwise `/` → `'`
 7.  `%%` → `%`
-8.  One or more `%HH` escapes → bytes represented by hexadecimal values
+8.  Each complete run of three spaces → newline; leftover one or two spaces
+    remain literal spaces
+9.  One or more `%HH` escapes → bytes represented by hexadecimal values
     `HH`, decoded as UTF-8
-9.  Remaining alphabetic characters → lowercase
-10. Remaining supported characters pass through unchanged
+10. Remaining alphabetic characters → lowercase
+11. Remaining supported characters pass through unchanged
 
 For example, `%C3%A9` reconstructs the UTF-8 bytes `C3 A9` and decodes
 to `é`; `%F0%9F%98%80` reconstructs the UTF-8 bytes `F0 9F 98 80` and

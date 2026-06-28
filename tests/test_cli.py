@@ -32,12 +32,12 @@ def test_encode_text_argument_preserves_explicit_trailing_newline():
     exit_code, stdout, stderr = run_cli("encode", "Hello World\n")
 
     assert exit_code == 0
-    assert stdout == "+HELLO +WORLD%0A"
+    assert stdout == "+HELLO +WORLD   "
     assert stderr == ""
 
 
 def test_decode_text_argument_preserves_explicit_trailing_newline():
-    exit_code, stdout, stderr = run_cli("decode", "+HELLO +WORLD%0A")
+    exit_code, stdout, stderr = run_cli("decode", "+HELLO +WORLD   ")
 
     assert exit_code == 0
     assert stdout == "Hello World\n"
@@ -64,12 +64,12 @@ def test_encode_stdin_preserves_single_trailing_newline():
     exit_code, stdout, stderr = run_cli("encode", stdin="Hello World\n")
 
     assert exit_code == 0
-    assert stdout == "+HELLO +WORLD%0A"
+    assert stdout == "+HELLO +WORLD   "
     assert stderr == ""
 
 
 def test_decode_stdin_preserves_single_trailing_newline():
-    exit_code, stdout, stderr = run_cli("decode", stdin="+HELLO +WORLD%0A")
+    exit_code, stdout, stderr = run_cli("decode", stdin="+HELLO +WORLD   ")
 
     assert exit_code == 0
     assert stdout == "Hello World\n"

@@ -5,7 +5,7 @@ from __future__ import annotations
 import string
 
 _QR_ALPHANUMERIC = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:"
-_PASS_THROUGH = set(string.digits + " $.-: ")
+_PASS_THROUGH = set(string.digits + " $.-:")
 _HEX = set(string.hexdigits.upper())
 _SHIFT_DECODE_BY_KEY = {
     "1": "!",
@@ -22,6 +22,22 @@ _SHIFT_ENCODE_BY_CHAR = {value: key for key, value in _SHIFT_DECODE_BY_KEY.items
 _SPECIAL_SINGLE_DECODE_BY_CHAR = {
     "*": '"',
 }
+
+
+def _append_space_run(text: str, index: int, parts: list[str]) -> int:
+    start = index
+    while index < len(text) and text[index] == " ":
+        index += 1
+
+    adjacent_to_newline = (start > 0 and text[start - 1] == "\n") or (
+        index < len(text) and text[index] == "\n"
+    )
+    if index - start == 1 and not adjacent_to_newline:
+        parts.append(" ")
+    else:
+        for char in text[start:index]:
+            _encode_utf8_escape(char, parts)
+    return index
 
 
 def _append_period_run(text: str, index: int, parts: list[str]) -> int:
@@ -57,9 +73,9 @@ def encode(text: str) -> str:
     are escaped as ``+X``, literal ``+`` and ``%`` are doubled, commas use
     ``:``, literal colons use ``::``, apostrophes use ``/``, literal slashes use ``//``, double
     quotes use ``*``, semicolons use ``+:``, supported QR Alphanumeric
-    punctuation passes through, and every unsupported character is emitted as
-    uppercase UTF-8
-    ``%HH`` byte escapes.
+    punctuation passes through, newlines use three consecutive spaces,
+    literal runs of multiple spaces use UTF-8 ``%HH`` byte escapes, and every
+    unsupported character is emitted as uppercase UTF-8 ``%HH`` byte escapes.
     """
 
     parts: list[str] = []
@@ -71,6 +87,13 @@ def encode(text: str) -> str:
                 _encode_utf8_escape(char, parts)
             else:
                 parts.append(":")
+            index += 1
+            continue
+        if char == " ":
+            index = _append_space_run(text, index, parts)
+            continue
+        if char == "\n":
+            parts.append("   ")
             index += 1
             continue
         if char == ".":
@@ -166,6 +189,11 @@ def decode(encoded: str) -> str:
             output.append(decoded)
             continue
 
+        if char == " ":
+            decoded, index = _decode_space_run(encoded, index)
+            output.append(decoded)
+            continue
+
         if "A" <= char <= "Z":
             output.append(char.lower())
         elif char in _PASS_THROUGH:
@@ -175,6 +203,15 @@ def decode(encoded: str) -> str:
         index += 1
 
     return "".join(output)
+
+
+def _decode_space_run(encoded: str, index: int) -> tuple[str, int]:
+    start = index
+    while index < len(encoded) and encoded[index] == " ":
+        index += 1
+
+    count = index - start
+    return "\n" * (count // 3) + " " * (count % 3), index
 
 
 def _decode_plus_escape(encoded: str, index: int) -> tuple[str, int]:
