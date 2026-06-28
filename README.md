@@ -2,12 +2,18 @@
 
 *A reversible, human-readable transform for QR Alphanumeric Mode.*
 
-> **Status:** Concept Draft (Revision 0.2)
+> **Status:** v1.0.0 stable release
 
 ## Installation
 
 ```bash
-python -m pip install -e .
+python -m pip install b45
+```
+
+For local development from a checkout, use:
+
+```bash
+python -m pip install -e .[dev]
 ```
 
 ## Python API
