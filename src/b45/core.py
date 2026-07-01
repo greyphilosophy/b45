@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import string
 
-_QR_ALPHANUMERIC = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:"
+_ALPHA_UPPER = set("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+_ALPHA_LOWER = {item.lower() for item in _ALPHA_UPPER}
+_QR_ALPHANUMERIC = set("0123456789 $%*+-./:") | _ALPHA_UPPER
 _PASS_THROUGH = set(string.digits + " $.-:")
 _HEX = set(string.hexdigits.upper())
 _SHIFT_DECODE_BY_KEY = {
@@ -114,9 +116,9 @@ def encode(text: str) -> str:
 
 
 def _encode_char(char: str, parts: list[str]) -> None:
-    if "a" <= char <= "z":
+    if char in _ALPHA_LOWER:
         parts.append(char.upper())
-    elif "A" <= char <= "Z":
+    elif char in _ALPHA_UPPER:
         parts.append(f"+{char}")
     elif char == "+":
         parts.append("++")
@@ -170,37 +172,26 @@ def decode(encoded: str) -> str:
         if char not in _QR_ALPHANUMERIC:
             raise ValueError(f"invalid b45 character at position {index}: {char!r}")
 
+        decoded = None
+
         if char == "+":
             decoded, index = _decode_plus_escape(encoded, index)
-            output.append(decoded)
-            continue
-
-        if char == ":":
+        elif char == ":":
             decoded, index = _decode_colon_escape(encoded, index)
-            output.append(decoded)
-            continue
-
-        if char in _SPECIAL_SINGLE_DECODE_BY_CHAR:
-            output.append(_SPECIAL_SINGLE_DECODE_BY_CHAR[char])
+        elif char in _SPECIAL_SINGLE_DECODE_BY_CHAR:
+            decoded = _SPECIAL_SINGLE_DECODE_BY_CHAR[char]
             index += 1
-            continue
-
-        if char == "/":
+        elif char == "/":
             decoded, index = _decode_slash_escape(encoded, index)
-            output.append(decoded)
-            continue
-
-        if char == "%":
+        elif char == "%":
             decoded, index = _decode_percent_run(encoded, index)
-            output.append(decoded)
-            continue
-
-        if char == " ":
+        elif char == " ":
             decoded, index = _decode_space_run(encoded, index)
+
+        if decoded is not None:
             output.append(decoded)
             continue
-
-        if "A" <= char <= "Z":
+        elif char in _ALPHA_UPPER:
             output.append(char.lower())
         elif char in _PASS_THROUGH:
             output.append(char)
@@ -228,7 +219,7 @@ def _decode_plus_escape(encoded: str, index: int) -> tuple[str, int]:
     next_char = encoded[index + 1]
     if next_char == "+":
         return "+", index + 2
-    if "A" <= next_char <= "Z":
+    if next_char in _ALPHA_UPPER:
         return next_char, index + 2
     if next_char in _SHIFT_DECODE_BY_KEY:
         return _SHIFT_DECODE_BY_KEY[next_char], index + 2

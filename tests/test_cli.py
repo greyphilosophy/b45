@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from io import StringIO
 
-from b45.cli import _run, main
+from ..src.b45.cli import _run, main
 
 
 def run_cli(*args: str, stdin: str = "") -> tuple[int, str, str]:
