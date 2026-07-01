@@ -1,6 +1,6 @@
 import pytest
 
-from b45 import __version__, decode, encode, is_canonical
+from ..src.b45 import __version__, decode, encode, is_canonical
 
 
 def test_package_version_is_v1_release():
@@ -46,7 +46,7 @@ TEST_VECTORS = [
 
 
 @pytest.mark.parametrize(("text", "encoded"), TEST_VECTORS)
-def test_test_vectors(text, encoded):
+def test_test_vectors(text: str, encoded: str):
     assert encode(text) == encoded
     assert decode(encoded) == text
     assert decode(encode(text)) == text
@@ -68,13 +68,13 @@ def test_test_vectors(text, encoded):
         ('"/,:', "*//%2C::"),
     ],
 )
-def test_encode_decode_cases(text, encoded):
+def test_encode_decode_cases(text: str, encoded: str):
     assert encode(text) == encoded
     assert decode(encoded) == text
 
 
 @pytest.mark.parametrize("encoded", ["HELLO", "%%", "%C3%A9"])
-def test_is_canonical_accepts_canonical_forms(encoded):
+def test_is_canonical_accepts_canonical_forms(encoded: str):
     assert is_canonical(encoded) is True
     assert encode(decode(encoded)) == encoded
 
@@ -89,7 +89,7 @@ def test_is_canonical_accepts_canonical_forms(encoded):
         "%2F",  # decodes as slash, but // is shorter
     ],
 )
-def test_is_canonical_rejects_decodable_non_canonical_forms(encoded):
+def test_is_canonical_rejects_decodable_non_canonical_forms(encoded: str):
     assert decode(encoded)
     assert is_canonical(encoded) is False
     assert encode(decode(encoded)) != encoded
@@ -141,7 +141,7 @@ def test_encoded_output_uses_qr_alphanumeric_alphabet_for_newlines_and_spaces():
         "abc",
     ],
 )
-def test_invalid_encoded_input_raises_value_error(encoded):
+def test_invalid_encoded_input_raises_value_error(encoded: str):
     with pytest.raises(ValueError):
         decode(encoded)
 
